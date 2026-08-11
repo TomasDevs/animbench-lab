@@ -1,4 +1,4 @@
-import type { BenchResult, RunMeta } from '../types/probe.ts'
+import type { Baseline, BenchResult, RunMeta } from '../types/probe.ts'
 import { measureBaseline } from './baseline.ts'
 import { FrameCollector } from './collector.ts'
 
@@ -42,6 +42,8 @@ export type RunHandle = {
   /** Stops collection and publishes the result. */
   finish(): BenchResult
   collector: FrameCollector
+  /** Measured before the run started, so demo mode can report against it. */
+  baseline: Baseline
 }
 
 /**
@@ -69,6 +71,7 @@ export async function runProbe(
 
   return {
     collector,
+    baseline,
     finish(): BenchResult {
       collector.stop()
       const result: BenchResult = {
