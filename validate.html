@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>animbench-lab equivalence check</title>
+    <style>
+      body { margin: 0; padding: 24px; font: 14px/1.5 system-ui, sans-serif; }
+      h1 { font-size: 18px; margin: 0 0 4px; }
+      p.lead { margin: 0 0 20px; color: #555; max-width: 60ch; }
+      #stage { position: fixed; top: -10000px; left: 0; width: 900px; height: 600px; }
+      table { border-collapse: collapse; margin-top: 16px; font-variant-numeric: tabular-nums; }
+      th, td { padding: 5px 12px; border-bottom: 1px solid #e2e2e2; text-align: right; }
+      th:first-child, td:first-child { text-align: left; }
+      .pass { color: #1a7f37; font-weight: 600; }
+      .fail { color: #c1121f; font-weight: 600; }
+      #status { color: #555; }
+      details { margin-top: 20px; }
+      pre { background: #f6f6f6; padding: 12px; overflow-x: auto; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>Trajectory equivalence</h1>
+    <p class="lead">
+      Every technique is sampled at the same nominal times and compared against
+      the requestAnimationFrame reference. A constant lag is reported separately
+      from a genuine path difference, because a technique may follow the same
+      path one frame later without animating anything different.
+    </p>
+    <div id="status">Running…</div>
+    <div id="results"></div>
+    <div id="stage"></div>
+
+    <script type="module">
+      import { validateTechnique, TOLERANCE_PX } from '/src/validate/index.ts'
+      import { availableAdapters, REFERENCE_ADAPTER_ID } from '/src/adapters/index.ts'
+
+      const stage = document.getElementById('stage')
+      const status = document.getElementById('status')
+      const results = document.getElementById('results')
+
+      const candidates = availableAdapters().filter((id) => id !== REFERENCE_ADAPTER_ID)
+      const reports = []
+
+      for (const technique of candidates) {
+        status.textContent = `Validating ${technique}…`
+        reports.push(await validateTechnique(stage, technique))
+      }
+
+      const table = document.createElement('table')
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>technique</th>
+            <th>max Δ</th>
+            <th>lag</th>
+            <th>Δ after lag</th>
+            <th>Δ opacity</th>
+            <th>verdict</th>
+          </tr>
+        </thead>
+        <tbody></tbody>`
+      const tbody = table.querySelector('tbody')
+
+      for (const r of reports) {
+        const row = document.createElement('tr')
+        row.innerHTML = `
+          <td>${r.technique}</td>
+          <td>${r.maxDeltaPx.toFixed(2)} px</td>
+          <td>${r.estimatedLagMs.toFixed(1)} ms</td>
+          <td>${r.maxDeltaLagCorrectedPx.toFixed(3)} px</td>
+          <td>${r.maxOpacityDelta.toFixed(3)}</td>
+          <td class="${r.equivalent ? 'pass' : 'fail'}">${r.equivalent ? 'equivalent' : 'DIVERGES'}</td>`
+        tbody.append(row)
+      }
+
+      results.append(table)
+
+      const details = document.createElement('details')
+      details.innerHTML = `<summary>Raw report (tolerance ${TOLERANCE_PX} px)</summary><pre>${
+        JSON.stringify(reports, null, 2)
+      }</pre>`
+      results.append(details)
+
+      status.textContent = reports.every((r) => r.equivalent)
+        ? `All ${reports.length} technique(s) equivalent to the ${REFERENCE_ADAPTER_ID} reference.`
+        : 'At least one technique diverges from the reference.'
+
+      window.__validation = reports
+      window.__validationDone = true
+    </script>
+  </body>
+</html>
