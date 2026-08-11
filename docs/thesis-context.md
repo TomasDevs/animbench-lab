@@ -109,7 +109,8 @@ zchladnutí a pořadí běhů je náhodné kvůli tepelnému škrcení.
 
 Zjištění z teoretické části, která ovlivňují návrh aplikace, shrnuje
 docs/theory-digest.md. Pokyny katedry k psaní práce shrnuje
-docs/kit-guidelines.md.
+docs/kit-guidelines.md. Podmínky, za kterých vznikají data, popisuje
+docs/measurement-protocol.md. Stav a další kroky sleduje docs/roadmap.md.
 
 ## Terminologie pro text práce
 

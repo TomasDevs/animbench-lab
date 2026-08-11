@@ -13,7 +13,8 @@ across techniques. Comparability between techniques is the single most important
 constraint in this project.
 
 Thesis goals, research questions and the reasoning behind the comparability
-rules are described in docs/thesis-context.md.
+rules are described in docs/thesis-context.md. The conditions a measurement run
+must satisfy are in docs/measurement-protocol.md.
 
 ## Stack
 
