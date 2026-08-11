@@ -60,6 +60,11 @@ export function compareTrajectories(
 
   let maxDelta = 0
   let maxOpacity = 0
+  // Difference against the reference as it was actually sampled. This keeps a
+  // direction-reversed trajectory detectable: such a path matches the spec at
+  // some shifted time in every sample, so a spec-only comparison would call it
+  // equivalent even though the element visibly moves the other way.
+  let maxDeltaVsSampledReference = 0
   const samples: ValidationReport['samples'] = []
 
   for (let i = 0; i < count; i++) {
@@ -67,13 +72,31 @@ export function compareTrajectories(
     const cand = candidate.samples[i]
     if (!ref || !cand) continue
 
-    const delta = distance(ref.translateX, ref.translateY, cand.translateX, cand.translateY)
+    maxDeltaVsSampledReference = Math.max(
+      maxDeltaVsSampledReference,
+      distance(ref.translateX, ref.translateY, cand.translateX, cand.translateY),
+    )
+
+    // Each run records its own actual elapsed time, and setTimeout overshoot
+    // makes those drift apart by a few ms. Comparing the two raw poses would
+    // book that sampling skew as a trajectory error, so the reference is
+    // re-evaluated from the spec at the candidate's own instant. The reference
+    // adapter computes directly from the spec, so this is the same value it
+    // would have written at that moment.
+    const refAtCandidateTime = interpolate(spec, Math.min(cand.time / spec.duration, 1))
+
+    const delta = distance(
+      refAtCandidateTime.translateX,
+      refAtCandidateTime.translateY,
+      cand.translateX,
+      cand.translateY,
+    )
     maxDelta = Math.max(maxDelta, delta)
-    maxOpacity = Math.max(maxOpacity, Math.abs(ref.opacity - cand.opacity))
+    maxOpacity = Math.max(maxOpacity, Math.abs(refAtCandidateTime.opacity - cand.opacity))
 
     samples.push({
-      time: ref.time,
-      reference: [ref.translateX, ref.translateY],
+      time: cand.time,
+      reference: [refAtCandidateTime.translateX, refAtCandidateTime.translateY],
       candidate: [cand.translateX, cand.translateY],
       deltaPx: delta,
     })
@@ -108,7 +131,10 @@ export function compareTrajectories(
     maxDeltaLagCorrectedPx: maxCorrected,
     estimatedLagMs: lag,
     maxOpacityDelta: maxOpacity,
-    equivalent: maxCorrected <= TOLERANCE_PX && maxDelta <= explainableByLag,
+    equivalent:
+      maxCorrected <= TOLERANCE_PX &&
+      maxDelta <= explainableByLag &&
+      maxDeltaVsSampledReference <= explainableByLag,
     samples,
   }
 }

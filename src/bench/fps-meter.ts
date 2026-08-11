@@ -18,9 +18,17 @@ export function startFpsMeter(
 ): FpsMeter {
   let handle = 0
   let frames = 0
-  let last = performance.now()
+  // Set on the first frame rather than at construction: the gap between
+  // starting the meter and the first rAF would otherwise be counted as frame
+  // time, under-reporting the first sample and poisoning any running minimum.
+  let last = 0
 
   const tick = (now: number): void => {
+    if (last === 0) {
+      last = now
+      handle = requestAnimationFrame(tick)
+      return
+    }
     frames++
     const elapsed = now - last
     if (elapsed >= intervalMs) {

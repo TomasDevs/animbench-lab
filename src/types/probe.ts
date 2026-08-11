@@ -53,6 +53,12 @@ export type BenchResult = {
   startTime: number
   /** Wall clock end of collection, ms. */
   endTime: number
+  /**
+   * True when the run produced more frames than the buffer could hold, so the
+   * timestamps are truncated. Such a run must be discarded rather than
+   * aggregated: it would look like a shorter run with fewer dropped frames.
+   */
+  overflowed: boolean
 }
 
 declare global {
@@ -61,7 +67,9 @@ declare global {
     __benchReady?: boolean
     /** Raw timestamps and run metadata after the run ends. */
     __benchResult?: BenchResult
-    /** True once the result is available. */
+    /** True once the result is available, or once the run has failed. */
     __benchDone?: boolean
+    /** Set instead of __benchResult when the run could not complete. */
+    __benchError?: string
   }
 }

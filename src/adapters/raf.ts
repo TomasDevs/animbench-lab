@@ -30,9 +30,14 @@ export class RafAdapter implements Adapter {
   start(): void {
     if (!this.#ctx || this.#handle !== 0) return
 
-    this.#startTime = 0
+    // Time zero is the moment start() is called, not the first frame. Timer
+    // driven techniques count from start() too, so anchoring here gives every
+    // adapter the same origin; anchoring at the first callback would shift this
+    // one forward by a frame and show up as a trajectory difference that no
+    // technique actually has.
+    this.#startTime = performance.now()
+
     const tick = (now: number): void => {
-      if (this.#startTime === 0) this.#startTime = now
       const elapsed = now - this.#startTime
 
       const finished = this.#applyAt(elapsed)

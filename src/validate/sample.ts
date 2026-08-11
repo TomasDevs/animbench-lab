@@ -21,11 +21,16 @@ export function readPose(element: HTMLElement, time: number): TrajectorySample {
     .split(',')
     .map((part) => Number.parseFloat(part))
 
-  // matrix(a, b, c, d, e, f)
+  // A promoted layer may report matrix3d(...) even for a purely 2D transform,
+  // and there the translation sits at indices 12 and 13 rather than 4 and 5.
+  // Reading the wrong pair would return 0 for every sample and make two
+  // unrelated trajectories look identical.
+  const is3d = transform.startsWith('matrix3d')
+
   const a = values[0] ?? 1
   const b = values[1] ?? 0
-  const e = values[4] ?? 0
-  const f = values[5] ?? 0
+  const e = (is3d ? values[12] : values[4]) ?? 0
+  const f = (is3d ? values[13] : values[5]) ?? 0
 
   return {
     time,

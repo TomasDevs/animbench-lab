@@ -57,7 +57,10 @@ async function main(): Promise<void> {
 
   markReady()
 
-  const handle = await runProbe(meta, () => adapter.start())
+  // Stagger delays the last element, so the run outlasts the nominal duration.
+  const runDurationMs = spec.duration + spec.stagger * scene.elements.length
+
+  const handle = await runProbe(meta, () => adapter.start(), { runDurationMs })
 
   let meter: { stop(): void } | null = null
 
@@ -78,16 +81,28 @@ async function main(): Promise<void> {
     window.addEventListener('beforeunload', () => meter?.stop(), { once: true })
   }
 
-  // Stagger delays the last element, so the run outlasts the nominal duration.
-  const tail = spec.duration + spec.stagger * scene.elements.length
   window.setTimeout(() => {
-    adapter.stop()
+    // Collection ends before the adapter tears down. The CSS adapter's stop()
+    // reads getComputedStyle for every element, forcing a style recalculation
+    // that would otherwise be recorded as a long frame and blamed on the
+    // technique.
     handle.finish()
+    adapter.stop()
     // Stop the readout with the animation: an idle page would otherwise show a
     // healthy frame rate that belongs to nothing.
     meter?.stop()
     panel?.setStatus('done — readout frozen')
-  }, tail)
+  }, runDurationMs)
 }
 
-void main()
+/**
+ * A failed run must fail loudly. Without this, an unknown technique or scene
+ * leaves neither __benchReady nor __benchDone set, and a polling harness waits
+ * forever instead of reporting the error.
+ */
+void main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error)
+  window.__benchError = message
+  window.__benchDone = true
+  console.error('[animbench] run failed:', error)
+})

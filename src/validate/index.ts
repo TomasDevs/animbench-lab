@@ -52,6 +52,8 @@ async function traceTechnique(
   if (!element) throw new Error('Scene produced no elements')
 
   const samples = []
+  // Every adapter treats the moment start() returns as time zero, so the
+  // sampling clock starts here too.
   const startedAt = performance.now()
   adapter.start()
 

@@ -55,15 +55,17 @@ export type RunHandle = {
 export async function runProbe(
   meta: RunMeta,
   onStart: () => void,
-  expectedFrames?: number,
+  options: { expectedFrames?: number; runDurationMs?: number } = {},
 ): Promise<RunHandle> {
   const baseline = await measureBaseline()
 
-  // Size the buffer from the measured rate plus headroom, so a fast display
-  // does not overflow a 60 Hz assumption.
+  // Size the buffer from the *whole* run, not the nominal duration. Stagger
+  // delays the last element, so a 10 s spec over 4000 elements actually runs for
+  // 26 s; sizing for 10 s would silently discard the tail of the measurement.
+  const runMs = options.runDurationMs ?? meta.duration
   const frames =
-    expectedFrames ??
-    Math.ceil(((meta.duration / 1000) * (baseline.refreshRate || 60)) * 1.5) + 240
+    options.expectedFrames ??
+    Math.ceil(((runMs / 1000) * (baseline.refreshRate || 60)) * 1.5) + 240
 
   const collector = new FrameCollector(frames)
   collector.start()
@@ -80,6 +82,9 @@ export async function runProbe(
         timestamps: collector.toArray(),
         startTime: collector.startTime,
         endTime: collector.endTime,
+        // Truncation must be visible downstream: a silently shortened run would
+        // look like a complete one with fewer dropped frames.
+        overflowed: collector.overflowed,
       }
       publishResult(result)
       return result

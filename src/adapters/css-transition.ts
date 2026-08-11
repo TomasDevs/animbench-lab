@@ -106,6 +106,10 @@ export class CssTransitionAdapter implements Adapter {
 
     // Freeze wherever the elements currently are: reading the computed value
     // and writing it back cancels the in-flight transition without a jump.
+    //
+    // Elements still inside their stagger delay freeze at the time-zero pose,
+    // which is correct: they had not started moving. A run stopped early is not
+    // a valid measurement anyway, since one run equals one full page load.
     const ctx = this.#ctx
     if (!ctx) return
     for (const element of ctx.elements) {
