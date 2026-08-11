@@ -59,9 +59,8 @@ export async function runProbe(
 ): Promise<RunHandle> {
   const baseline = await measureBaseline()
 
-  // Size the buffer from the *whole* run, not the nominal duration. Stagger
-  // delays the last element, so a 10 s spec over 4000 elements actually runs for
-  // 26 s; sizing for 10 s would silently discard the tail of the measurement.
+  // Sized from the whole run, not the nominal duration: stagger stretches a 10 s
+  // spec over 4000 elements to 26 s, and the tail would be discarded silently.
   const runMs = options.runDurationMs ?? meta.duration
   const frames =
     options.expectedFrames ??
@@ -82,8 +81,8 @@ export async function runProbe(
         timestamps: collector.toArray(),
         startTime: collector.startTime,
         endTime: collector.endTime,
-        // Truncation must be visible downstream: a silently shortened run would
-        // look like a complete one with fewer dropped frames.
+        // A truncated run must be detectable: it otherwise reads as a complete
+        // one with fewer dropped frames.
         overflowed: collector.overflowed,
       }
       publishResult(result)

@@ -2,12 +2,12 @@ import type { Adapter, AdapterContext, AdapterMeta } from '../types/adapter.ts'
 import { formatTransform, interpolate, progressAt } from './interpolate.ts'
 
 /**
- * Reference implementation.
+ * Reference implementation: positions computed straight from the spec, with no
+ * engine involved.
  *
- * Computes positions directly from the AnimationSpec with no engine involved.
  * Every other adapter is validated against this one, so it must stay free of
- * shortcuts: no caching of computed strings, no skipping of unchanged frames.
- * Such optimisations would make the reference faster than what it validates.
+ * shortcuts such as caching computed strings or skipping unchanged frames.
+ * Those would make the reference faster than what it validates.
  */
 export class RafAdapter implements Adapter {
   static readonly meta: AdapterMeta = {
@@ -30,11 +30,9 @@ export class RafAdapter implements Adapter {
   start(): void {
     if (!this.#ctx || this.#handle !== 0) return
 
-    // Time zero is the moment start() is called, not the first frame. Timer
-    // driven techniques count from start() too, so anchoring here gives every
-    // adapter the same origin; anchoring at the first callback would shift this
-    // one forward by a frame and show up as a trajectory difference that no
-    // technique actually has.
+    // Time zero is start(), not the first frame: timer driven adapters count
+    // from start() too, and a differing origin shows up as a trajectory
+    // difference that no technique actually has.
     this.#startTime = performance.now()
 
     const tick = (now: number): void => {

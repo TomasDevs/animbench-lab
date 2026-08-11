@@ -1,11 +1,9 @@
 /**
- * Seeded pseudo random number generator.
+ * Seeded pseudo random number generator (mulberry32).
  *
- * Math.random cannot be used anywhere in scene generation. The same seed must
- * always produce the same layout, otherwise two techniques would animate
- * different scenes and the comparison would measure the layout difference.
- *
- * mulberry32: small, fast, and good enough for element placement.
+ * Math.random must not be used in scene generation: two techniques given the
+ * same seed have to animate the same scene, or the comparison measures the
+ * layout difference instead of the technique.
  */
 export type Random = {
   /** Next value in [0, 1). */

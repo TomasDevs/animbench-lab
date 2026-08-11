@@ -60,10 +60,9 @@ export function compareTrajectories(
 
   let maxDelta = 0
   let maxOpacity = 0
-  // Difference against the reference as it was actually sampled. This keeps a
-  // direction-reversed trajectory detectable: such a path matches the spec at
-  // some shifted time in every sample, so a spec-only comparison would call it
-  // equivalent even though the element visibly moves the other way.
+  // Kept alongside the spec comparison below: a reversed path matches the spec
+  // at some shifted time in every sample, so only the sampled reference
+  // exposes it.
   let maxDeltaVsSampledReference = 0
   const samples: ValidationReport['samples'] = []
 
@@ -77,12 +76,9 @@ export function compareTrajectories(
       distance(ref.translateX, ref.translateY, cand.translateX, cand.translateY),
     )
 
-    // Each run records its own actual elapsed time, and setTimeout overshoot
-    // makes those drift apart by a few ms. Comparing the two raw poses would
-    // book that sampling skew as a trajectory error, so the reference is
-    // re-evaluated from the spec at the candidate's own instant. The reference
-    // adapter computes directly from the spec, so this is the same value it
-    // would have written at that moment.
+    // Both runs sample on their own clock and setTimeout overshoot drifts them
+    // apart, so the reference is re-evaluated at the candidate's own instant
+    // rather than compared pose to pose.
     const refAtCandidateTime = interpolate(spec, Math.min(cand.time / spec.duration, 1))
 
     const delta = distance(
@@ -116,11 +112,7 @@ export function compareTrajectories(
     )
   }
 
-  // The lag-corrected error alone is not enough. A symmetric path traversed in
-  // the opposite direction fits the spec at *some* shifted time at every sample,
-  // so it would score a perfect corrected error while being visibly wrong. The
-  // direct comparison against the reference catches that, and the lag only
-  // excuses a difference as large as the motion covers within that lag.
+  // A lag can only excuse as much difference as the motion covers within it.
   const maxSpeed = estimateMaxSpeed(spec)
   const explainableByLag = maxSpeed * lag + TOLERANCE_PX
 

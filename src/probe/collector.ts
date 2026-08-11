@@ -1,12 +1,9 @@
 /**
  * Frame timestamp collector.
  *
- * Collects raw timestamps and nothing else. No averaging, no counting of
- * dropped frames, no formatting: all aggregation happens outside the browser,
- * because computing anything here would load the very thread being measured.
- *
- * The array is preallocated so the hot loop never triggers a resize while the
- * animation is running.
+ * Raw timestamps and nothing else: all aggregation happens outside the browser,
+ * because computing anything here would load the thread being measured. The
+ * buffer is preallocated so the hot loop never triggers a resize mid-run.
  */
 export class FrameCollector {
   #timestamps: Float64Array

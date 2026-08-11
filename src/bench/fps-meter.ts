@@ -1,12 +1,9 @@
 /**
- * Live frame rate readout for demo mode only.
+ * Live frame rate readout. Demo mode only.
  *
- * This deliberately duplicates work the probe refuses to do. The probe collects
- * raw timestamps and never aggregates, because aggregation would load the
- * measured thread. The readout is a debugging aid, so it may aggregate, and it
- * exists only in demo mode where nothing is being measured.
- *
- * Never use this in bench mode.
+ * Aggregating in the page is exactly what the probe refuses to do, since it
+ * loads the measured thread. This is a debugging aid and must never run in
+ * bench mode.
  */
 export type FpsMeter = {
   stop(): void
@@ -18,9 +15,8 @@ export function startFpsMeter(
 ): FpsMeter {
   let handle = 0
   let frames = 0
-  // Set on the first frame rather than at construction: the gap between
-  // starting the meter and the first rAF would otherwise be counted as frame
-  // time, under-reporting the first sample and poisoning any running minimum.
+  // Set on the first frame, not at construction: the gap before the first rAF
+  // would otherwise count as frame time and poison a running minimum.
   let last = 0
 
   const tick = (now: number): void => {

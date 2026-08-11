@@ -2,12 +2,11 @@ import type { Scene, SceneGenerator, SceneOptions } from '../types/scene-generat
 import { createRandom } from './random.ts'
 
 /**
- * Grid scene: elements laid out in a grid, animated with translate and opacity,
- * staggered by position. Serves VO1, VO2 and VO3.
+ * Grid scene: elements in a grid, translate and opacity, staggered by position.
  *
- * The layout is derived from the seed, so the same seed and complexity always
- * produce the same grid. Only the per element hue and size jitter are random;
- * the grid geometry itself is a deterministic function of the element count.
+ * The same seed and complexity always produce the same grid. Geometry is a
+ * function of the element count and viewport; only the per element hue comes
+ * from the seeded generator.
  */
 
 /** Hue range kept narrow so elements stay visually uniform across seeds. */
@@ -71,8 +70,8 @@ export const gridScene: SceneGenerator = {
     root.style.setProperty('--gap', complexity > 500 ? '2px' : '6px')
 
     const elements: HTMLElement[] = []
-    // Build into a fragment so the scene reaches the document in one insertion
-    // and the element count does not change the number of layout passes.
+    // One insertion, so the element count does not change how many layout
+    // passes the scene costs to build.
     const fragment = document.createDocumentFragment()
 
     for (let i = 0; i < complexity; i++) {

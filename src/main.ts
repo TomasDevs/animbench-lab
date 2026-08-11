@@ -24,9 +24,8 @@ function demoUrl(technique: string, scene: SceneId, complexity: number): string 
       complexity,
       seed: 42,
       duration: 10_000,
-      // Demo mode from the landing page: a human clicking a link wants to see
-      // the animation and the readout. Measurement runs are started by the CLI
-      // with mode=bench, where the panel must not exist.
+      // Links are for humans, so they open demo mode. Measurement runs are
+      // started by the CLI with mode=bench.
       mode: 'demo',
       repeat: 0,
     },

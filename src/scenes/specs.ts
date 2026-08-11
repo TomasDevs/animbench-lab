@@ -2,10 +2,9 @@ import type { AnimationSpec } from '../types/animation.ts'
 import type { SceneId } from '../types/scene.ts'
 
 /**
- * The spec is data, shared by every adapter for a given run. One instance per
- * run, handed to whichever technique is being measured.
+ * Animation specs, one per scene.
  *
- * Every keyframe carries every channel, in the same order, so no adapter can
+ * Every keyframe carries every channel in the same order, so no adapter can
  * produce a structurally different transform list.
  */
 
@@ -28,9 +27,8 @@ const specs: Partial<Record<SceneId, AnimationSpec>> = {
 }
 
 /**
- * Returns a deep copy so a run cannot mutate the shared definition. Adapters
- * still receive one identical instance per run; the copy guards against a
- * previous run leaking state into the next.
+ * Returns a deep copy, so a run cannot mutate the shared definition. Every
+ * adapter in one run still receives the same instance.
  */
 export function specFor(scene: SceneId, duration?: number): AnimationSpec {
   const base = specs[scene]

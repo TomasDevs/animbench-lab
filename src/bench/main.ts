@@ -40,8 +40,7 @@ async function main(): Promise<void> {
     repeat: params.repeat,
   })
 
-  // The panel module is imported only in demo mode, so bench mode never
-  // downloads or executes it. It must not exist while measuring.
+  // Imported only in demo mode, so bench mode never downloads or executes it.
   const panel =
     params.mode === 'demo'
       ? await import('./panel.ts').then(async (m) =>
@@ -66,14 +65,9 @@ async function main(): Promise<void> {
 
   if (panel) {
     const { startFpsMeter } = await import('./fps-meter.ts')
-    // The baseline is measured inside runProbe, so the achievable rate is known
-    // by the time the panel starts reporting against it.
     const budget = handle.baseline.refreshRate || 60
     let worst = Infinity
     meter = startFpsMeter((fps) => {
-      // The worst sample matters more than the current one: once the animation
-      // ends the page goes idle and the live number climbs back to the display
-      // rate, which says nothing about how the technique performed.
       worst = Math.min(worst, fps)
       panel.setFps(fps, fps / budget, worst)
     })
@@ -82,24 +76,17 @@ async function main(): Promise<void> {
   }
 
   window.setTimeout(() => {
-    // Collection ends before the adapter tears down. The CSS adapter's stop()
-    // reads getComputedStyle for every element, forcing a style recalculation
-    // that would otherwise be recorded as a long frame and blamed on the
-    // technique.
+    // Collection must end before teardown: the CSS adapter's stop() forces a
+    // style recalculation that would otherwise be recorded as a long frame.
     handle.finish()
     adapter.stop()
-    // Stop the readout with the animation: an idle page would otherwise show a
-    // healthy frame rate that belongs to nothing.
+    // An idle page reports a healthy frame rate that belongs to nothing.
     meter?.stop()
     panel?.setStatus('done — readout frozen')
   }, runDurationMs)
 }
 
-/**
- * A failed run must fail loudly. Without this, an unknown technique or scene
- * leaves neither __benchReady nor __benchDone set, and a polling harness waits
- * forever instead of reporting the error.
- */
+// A failed run must set __benchDone, or a polling harness waits forever.
 void main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error)
   window.__benchError = message

@@ -26,13 +26,12 @@ export function interpolate(spec: AnimationSpec, progress: number): Keyframe {
   const first = frames[0] ?? REST
   const last = frames[frames.length - 1] ?? REST
 
-  // Clamp outside the timeline rather than extrapolating. A run that overshoots
-  // its duration must hold the final pose, not keep moving.
+  // Clamped rather than extrapolated: an overshooting run holds the final pose.
   if (progress <= first.offset) return first
   if (progress >= last.offset) return last
 
-  // Linear scan: keyframe counts are small (a handful per spec), so an index
-  // search would cost more than it saves.
+  // Linear scan: a spec carries a handful of keyframes, so an index search
+  // would cost more than it saves.
   for (let i = 0; i < frames.length - 1; i++) {
     const a = frames[i]
     const b = frames[i + 1]

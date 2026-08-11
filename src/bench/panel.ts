@@ -5,13 +5,9 @@ import type { SceneId } from '../types/scene.ts'
 /**
  * Demo mode control panel.
  *
- * This module is only ever imported in demo mode, so in bench mode its code is
- * never downloaded, parsed or executed. Switching a control reloads the page
- * with new parameters: one measurement run equals one page load, and the
- * technique is never swapped at runtime.
- *
- * The panel is rendered outside the scene container so it cannot affect the
- * scene's layout.
+ * Changing a control reloads the page rather than swapping the technique in
+ * place, because one measurement run equals one page load. Rendered outside the
+ * scene container so it cannot affect the scene's layout.
  */
 
 const COMPLEXITY_STEPS = [50, 100, 250, 500, 1000, 2000, 4000]
@@ -24,11 +20,9 @@ export type PanelOptions = {
 
 export type Panel = {
   /**
-   * Updates the live frame rate readout.
-   *
-   * @param worst Lowest sample seen so far. The current value returns to the
-   * display rate as soon as the page goes idle, so the worst sample is what
-   * actually characterises the run.
+   * @param worst Lowest sample so far. The current value climbs back to the
+   * display rate once the page goes idle, so the worst sample is what
+   * characterises the run.
    */
   setFps(fps: number, ratio: number, worst?: number): void
   setStatus(text: string): void

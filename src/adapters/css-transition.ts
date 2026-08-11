@@ -5,23 +5,14 @@ import { formatTransform } from './interpolate.ts'
 /**
  * CSS transitions adapter.
  *
- * A transition only interpolates between two states, while a spec carries a
- * whole keyframe list. The adapter therefore walks the list segment by segment,
- * scheduling the next state once the current one has been reached.
+ * A transition interpolates between two states only, so the keyframe list is
+ * walked segment by segment. Segments advance on a timer rather than on
+ * transitionend, which fires once per animated property and may not fire at all
+ * in a background tab.
  *
- * Segments are advanced by timer rather than by transitionend. transitionend
- * fires once per animated property, so transform and opacity would each report
- * separately, and a transition interrupted by a background tab may not fire at
- * all. A timer keeps the segment boundaries at the same nominal times as the
- * reference implementation computes them.
- *
- * Measured against the reference, this adapter follows the same path with a
- * constant lag of roughly one frame (~16.5 ms at 60 Hz): a style written from a
- * timer is only committed on the next frame. Correcting for that lag brings the
- * positional error under 0.05 px, so the trajectories are equivalent and the
- * offset is a property of the technique, not a defect. The validator reports
- * the lag rather than hiding it, because it is exactly the kind of difference
- * the measurement is meant to expose.
+ * This technique runs roughly one frame behind the reference, because a style
+ * written from a timer is committed on the next frame. That lag is a property
+ * of the technique; the validator reports it rather than correcting for it.
  */
 export class CssTransitionAdapter implements Adapter {
   static readonly meta: AdapterMeta = {
@@ -66,9 +57,6 @@ export class CssTransitionAdapter implements Adapter {
       for (let iteration = 0; iteration < spec.iterations; iteration++) {
         const iterationStart = delay + iteration * spec.duration
 
-        // Schedule each segment: at its start time, set the transition to span
-        // the segment and write the target pose. Only transform and opacity are
-        // transitioned, and the timing function is always linear.
         for (let f = 0; f < frames.length - 1; f++) {
           const from = frames[f]
           const to = frames[f + 1]
@@ -82,9 +70,8 @@ export class CssTransitionAdapter implements Adapter {
           }, segmentStart)
         }
 
-        // Repeating specs must snap back to the first keyframe before the next
-        // iteration, otherwise the element would transition backwards through
-        // the whole timeline.
+        // Snap back before the next iteration, otherwise the element would
+        // transition backwards through the whole timeline.
         if (iteration < spec.iterations - 1) {
           const wrap = iterationStart + spec.duration
           this.#schedule(() => {
@@ -104,12 +91,8 @@ export class CssTransitionAdapter implements Adapter {
     this.#timers = []
     this.#running = false
 
-    // Freeze wherever the elements currently are: reading the computed value
-    // and writing it back cancels the in-flight transition without a jump.
-    //
-    // Elements still inside their stagger delay freeze at the time-zero pose,
-    // which is correct: they had not started moving. A run stopped early is not
-    // a valid measurement anyway, since one run equals one full page load.
+    // Reading the computed value and writing it back cancels the in-flight
+    // transition without a jump.
     const ctx = this.#ctx
     if (!ctx) return
     for (const element of ctx.elements) {
