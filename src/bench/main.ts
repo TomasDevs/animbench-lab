@@ -59,16 +59,23 @@ async function main(): Promise<void> {
 
   const handle = await runProbe(meta, () => adapter.start())
 
+  let meter: { stop(): void } | null = null
+
   if (panel) {
     const { startFpsMeter } = await import('./fps-meter.ts')
     // The baseline is measured inside runProbe, so the achievable rate is known
     // by the time the panel starts reporting against it.
     const budget = handle.baseline.refreshRate || 60
-    const meter = startFpsMeter((fps) => {
-      panel.setFps(fps, fps / budget)
+    let worst = Infinity
+    meter = startFpsMeter((fps) => {
+      // The worst sample matters more than the current one: once the animation
+      // ends the page goes idle and the live number climbs back to the display
+      // rate, which says nothing about how the technique performed.
+      worst = Math.min(worst, fps)
+      panel.setFps(fps, fps / budget, worst)
     })
     panel.setStatus('running')
-    window.addEventListener('beforeunload', () => meter.stop(), { once: true })
+    window.addEventListener('beforeunload', () => meter?.stop(), { once: true })
   }
 
   // Stagger delays the last element, so the run outlasts the nominal duration.
@@ -76,7 +83,10 @@ async function main(): Promise<void> {
   window.setTimeout(() => {
     adapter.stop()
     handle.finish()
-    panel?.setStatus('done')
+    // Stop the readout with the animation: an idle page would otherwise show a
+    // healthy frame rate that belongs to nothing.
+    meter?.stop()
+    panel?.setStatus('done — readout frozen')
   }, tail)
 }
 

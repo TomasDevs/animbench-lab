@@ -23,8 +23,14 @@ export type PanelOptions = {
 }
 
 export type Panel = {
-  /** Updates the live frame rate readout. */
-  setFps(fps: number, ratio: number): void
+  /**
+   * Updates the live frame rate readout.
+   *
+   * @param worst Lowest sample seen so far. The current value returns to the
+   * display rate as soon as the page goes idle, so the worst sample is what
+   * actually characterises the run.
+   */
+  setFps(fps: number, ratio: number, worst?: number): void
   setStatus(text: string): void
   dispose(): void
 }
@@ -135,6 +141,9 @@ export function createPanel(options: PanelOptions): Panel {
   ratioEl.className = 'demo-panel__status'
   readout.append(fpsEl, ratioEl)
 
+  const worstEl = document.createElement('div')
+  worstEl.className = 'demo-panel__status'
+
   const statusEl = document.createElement('div')
   statusEl.className = 'demo-panel__status'
 
@@ -143,14 +152,18 @@ export function createPanel(options: PanelOptions): Panel {
     field('scene', sceneSelect),
     field('complexity', complexitySelect),
     readout,
+    worstEl,
     statusEl,
   )
   document.body.append(root)
 
   return {
-    setFps(fps, ratio) {
+    setFps(fps, ratio, worst) {
       fpsEl.textContent = `${fps.toFixed(1)} fps`
       ratioEl.textContent = `${Math.round(ratio * 100)}% of budget`
+      if (worst !== undefined && Number.isFinite(worst)) {
+        worstEl.textContent = `worst ${worst.toFixed(1)} fps`
+      }
     },
     setStatus(text) {
       statusEl.textContent = text
