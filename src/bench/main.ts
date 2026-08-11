@@ -1,4 +1,4 @@
-import { loadAdapter, availableAdapters } from '../adapters/index.ts'
+import { loadAdapter, allAdapterMeta } from '../adapters/index.ts'
 import { loadScene, availableScenes } from '../scenes/index.ts'
 import { specFor } from '../scenes/specs.ts'
 import { collectMeta, markReady, runProbe } from '../probe/index.ts'
@@ -44,10 +44,10 @@ async function main(): Promise<void> {
   // downloads or executes it. It must not exist while measuring.
   const panel =
     params.mode === 'demo'
-      ? await import('./panel.ts').then((m) =>
+      ? await import('./panel.ts').then(async (m) =>
           m.createPanel({
             params,
-            techniques: availableAdapters().map((id) => ({ id, label: id })),
+            techniques: await allAdapterMeta(),
             scenes: availableScenes(),
           }),
         )
