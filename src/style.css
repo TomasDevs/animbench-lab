@@ -1,9 +1,60 @@
 :root {
   font-family: system-ui, sans-serif;
   line-height: 1.5;
+  color: #1a1a1a;
 }
 
 body {
   margin: 0;
   padding: 2rem;
+  max-width: 60rem;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin: 0 0 0.25rem;
+}
+
+h2 {
+  font-size: 1rem;
+  margin: 2rem 0 0.5rem;
+}
+
+p {
+  margin: 0 0 0.75rem;
+  max-width: 70ch;
+}
+
+.note {
+  color: #555;
+  font-size: 0.875rem;
+}
+
+table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+th,
+td {
+  padding: 0.3rem 0.9rem;
+  border-bottom: 1px solid #e2e2e2;
+  text-align: right;
+}
+
+th:first-child,
+td:first-child {
+  text-align: left;
+}
+
+th {
+  font-weight: 600;
+  color: #555;
+}
+
+code {
+  font-size: 0.9em;
+  background: #f2f2f2;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
 }

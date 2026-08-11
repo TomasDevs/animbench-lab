@@ -86,3 +86,40 @@ Měření na iPhonu proto probíhá ručně a spoléhá výhradně na sondu ve s
 Obnovovací frekvence obrazovek se mezi zařízeními liší. Sonda proto před
 každým během změří klidový rozestup snímků, aby šlo výsledek vyjádřit jako
 podíl dosažené a dosažitelné frekvence.
+
+Měří se s viditelným oknem prohlížeče, nikoli bezhlavě, protože bezhlavý režim
+nemusí použít grafickou akceleraci a bez kompozitoru na grafické kartě by se
+ztratila právě zkoumaná výhoda kaskádových stylů. Okno navíc nesmí být během
+běhu zakryté ani minimalizované, jinak Chromium omezí volání
+requestAnimationFrame.
+
+Matice není vyvážená, protože ne každá technika zvládne každou scénu. Scéna se
+proto vyhodnocuje zvlášť jako samostatná matice technik a složitostí. Druhá
+cesta, tedy ponechat v matici jen techniky zvládající všechny tři scény, by
+vyřadila scroll-driven animace a rozbila VO4.
+
+Skriptovaný posun stránky pro VO4 musí být plynulý posun syntetizovaný
+protokolem vývojářských nástrojů. Nastavení vlastnosti scrollTop sice událost
+posunu vyvolá, hodnota však skočí naráz, takže vznikne jeden velký přírůstek
+místo plynulého pohybu a obejde se cesta přes kompozitor.
+
+Ke každému běhu se zaznamenává verze prohlížeče, obnovovací frekvence obrazovky
+a u mobilních zařízení stav nabíjení. Mezi běhy se drží pevná prodleva na
+zchladnutí a pořadí běhů je náhodné kvůli tepelnému škrcení.
+
+Zjištění z teoretické části, která ovlivňují návrh aplikace, shrnuje
+docs/theory-digest.md. Pokyny katedry k psaní práce shrnuje
+docs/kit-guidelines.md.
+
+## Terminologie pro text práce
+
+Používat sonda a vkládání sondy před spuštěním kódu stránky. Vyhnout se výrazům
+jako vstřikování nebo injekce, které v české odborné češtině v tomto kontextu
+nesedí. Režimy pojmenovat jako režim s vestavěnou sondou a univerzální režim.
+
+Zkratky zavedené v teoretické části a používané i v praktické: CDP, CPU, GPU,
+DOM, FPS, INP, WAAPI, WCAG. Termín sonda v teoretické části zaveden není, proto
+se v kapitole 4 zavede při prvním použití.
+
+Anglické identifikátory v kódu se v textu práce nepřekládají, uvádějí se
+v původní podobě, například AnimationSpec nebo bench.html.

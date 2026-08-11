@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         index: fileURLToPath(new URL('index.html', import.meta.url)),
         bench: fileURLToPath(new URL('bench.html', import.meta.url)),
+        validate: fileURLToPath(new URL('validate.html', import.meta.url)),
       },
     },
   },

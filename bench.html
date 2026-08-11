@@ -4,8 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>animbench-lab bench</title>
+    <style>
+      /* Inline so the measurement page issues no extra request. No web fonts,
+         no header, no content outside the scene. */
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; }
+      #scene { width: 100vw; height: 100vh; }
+    </style>
   </head>
   <body>
     <div id="scene"></div>
+    <script type="module" src="/src/bench/main.ts"></script>
   </body>
 </html>
