@@ -39,6 +39,8 @@ export function collectMeta(
 }
 
 export type RunHandle = {
+  /** Begins frame collection. Call once, when the run is meant to start. */
+  begin(): void
   /** Stops collection and publishes the result. */
   finish(): BenchResult
   collector: FrameCollector
@@ -47,12 +49,14 @@ export type RunHandle = {
 }
 
 /**
- * Runs the measurement: idle baseline first, then frame collection.
+ * Prepares the measurement: idle baseline first, then a collector sized for the
+ * run. Collection itself starts on begin().
  *
  * The baseline must be measured before the animation starts, otherwise it would
- * capture the load it is meant to be compared against.
+ * capture the load it is meant to be compared against. Preparing and starting
+ * are separate so that building the scene is not recorded as part of the run.
  */
-export async function runProbe(
+export async function prepareProbe(
   meta: RunMeta,
   onStart: () => void,
   options: { expectedFrames?: number; runDurationMs?: number } = {},
@@ -64,15 +68,17 @@ export async function runProbe(
   const runMs = options.runDurationMs ?? meta.duration
   const frames =
     options.expectedFrames ??
-    Math.ceil(((runMs / 1000) * (baseline.refreshRate || 60)) * 1.5) + 240
+    Math.ceil(((runMs / 1000) * (baseline.refreshRateHz || 60)) * 1.5) + 240
 
   const collector = new FrameCollector(frames)
-  collector.start()
-  onStart()
 
   return {
     collector,
     baseline,
+    begin(): void {
+      collector.start()
+      onStart()
+    },
     finish(): BenchResult {
       collector.stop()
       const result: BenchResult = {

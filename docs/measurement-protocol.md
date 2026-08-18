@@ -15,14 +15,47 @@ Technika se nikdy nepřepíná za běhu.
 Průběh běhu:
 
 1. Nástroj otevře adresu s parametry a čeká na window.__benchReady.
-2. Stránka změří klidový rozestup snímků po dobu jedné sekundy. Nic se
-   nepohybuje, takže výsledek vyjadřuje, co zařízení zvládne.
-3. Spustí se animace a sonda sbírá časová razítka snímků.
-4. Po doběhnutí stránka vystaví window.__benchResult a window.__benchDone.
+2. Stránka postaví scénu, inicializuje adaptér a změří klidový rozestup snímků.
+   Nic se nepohybuje, takže výsledek vyjadřuje, co zařízení zvládne.
+3. Nástroj zavolá window.__benchStart. Až tím začíná měřený běh, takže doba
+   stavby scény do dat nevstupuje.
+4. Po doběhnutí stránka vystaví window.__benchResult a nastaví window.__benchDone.
 5. Nástroj hodnoty odečte a stránku zavře.
 
 Sonda neprovádí žádný výpočet. Průměr, medián, percentily i počet snímků nad
 rozpočtem se dopočítají až v nástroji.
+
+## Kontrakt stránky
+
+Stránka vystavuje na objektu window pět klíčů:
+
+| klíč | typ | význam |
+|------|-----|--------|
+| `__benchReady` | true | scéna postavená, adaptér inicializovaný |
+| `__benchStart` | funkce | nástroj jí spustí měření |
+| `__benchResult` | objekt | surová razítka a metadata po doběhnutí |
+| `__benchDone` | true | výsledek je k dispozici |
+| `__benchError` | { message, stack? } | místo výsledku, pokud běh selhal |
+
+Nástroj funkci __benchStart zavolá jednou, vrácený příslib zahodí a sleduje
+výhradně __benchDone. Stránka proto nesmí nastavit __benchDone dřív, než je
+__benchResult úplný.
+
+Časové limity nástroje: 30 s na dobu od načtení do __benchReady, 120 s na dobu
+od __benchStart do __benchDone. Běh při čtyřech tisících prvcích trvá 26 s, což
+se do limitu vejde.
+
+Pole frameIntervalMs a refreshRateHz si musí odpovídat. Nástroj z prvního
+odvozuje snímkový rozpočet a z druhého podíl dosažené a dosažitelné frekvence,
+ale vzájemnou shodu nekontroluje. Zaokrouhlená frekvence spolu se surově
+naměřeným rozestupem by proto vytvořila nekonzistenci, které by si nikdo
+nevšiml. Stránka posílá obě hodnoty odvozené ze zaokrouhlené frekvence
+a naměřenou hodnotu přikládá zvlášť jako measuredRefreshHz.
+
+Rozměry, podle kterých se má v datech seskupovat, musí přijít jako parametry
+adresy. Nástroj seskupuje podle nich, nikoli podle metadat. Stránka je zároveň
+vrací v meta, takže případný nesoulad mezi adresou a tím, co stránka přečetla,
+jde zpětně dohledat.
 
 ## Délka běhu
 

@@ -8,14 +8,22 @@ import type { SceneId } from './scene.ts'
  * run rather than once per device.
  */
 export type Baseline = {
-  /** Raw frame timestamps of the idle loop, ms. */
-  timestamps: number[]
-  /** Median gap between idle frames, ms. The device's real frame budget. */
-  medianDelta: number
-  /** Derived refresh rate in Hz, rounded to the nearest plausible value. */
-  refreshRate: number
+  /**
+   * Median gap between idle frames, ms. The device's frame budget.
+   *
+   * Derived from refreshRateHz rather than reported as measured, so the two
+   * stay consistent: the tool reads the budget from this field and the
+   * achieved/achievable ratio from refreshRateHz, without cross-checking them.
+   */
+  frameIntervalMs: number
+  /** Refresh rate in Hz, snapped to the nearest plausible display rate. */
+  refreshRateHz: number
+  /** Raw idle frame intervals, ms. */
+  samples: number[]
   /** How long the idle loop ran, ms. */
   duration: number
+  /** Rate as measured, before snapping. Kept so the snap can be justified. */
+  measuredRefreshHz: number
 }
 
 /** Everything needed to reproduce the run, recorded alongside the timestamps. */
@@ -65,11 +73,17 @@ declare global {
   interface Window {
     /** True once the scene is built and the adapter initialised. */
     __benchReady?: boolean
+    /**
+     * Starts the run. The tool calls this and discards the returned promise,
+     * watching __benchDone instead, so __benchDone must not be set until
+     * __benchResult is complete.
+     */
+    __benchStart?: () => void | Promise<void>
     /** Raw timestamps and run metadata after the run ends. */
     __benchResult?: BenchResult
     /** True once the result is available, or once the run has failed. */
     __benchDone?: boolean
     /** Set instead of __benchResult when the run could not complete. */
-    __benchError?: string
+    __benchError?: { message: string; stack?: string }
   }
 }

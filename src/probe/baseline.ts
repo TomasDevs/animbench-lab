@@ -58,10 +58,17 @@ export function measureBaseline(durationMs = 1000): Promise<Baseline> {
       const settled = deltas.length > 1 ? deltas.slice(1) : deltas
       const medianDelta = median(settled)
 
+      const measuredRefreshHz = medianDelta > 0 ? 1000 / medianDelta : 0
+      const refreshRateHz = medianDelta > 0 ? snapRefreshRate(measuredRefreshHz) : 0
+
       resolve({
-        timestamps,
-        medianDelta,
-        refreshRate: medianDelta > 0 ? snapRefreshRate(1000 / medianDelta) : 0,
+        // Derived from the snapped rate, not from the measured median: the tool
+        // takes the budget from here and the ratio from refreshRateHz, so a
+        // snapped rate paired with a raw interval would silently disagree.
+        frameIntervalMs: refreshRateHz > 0 ? 1000 / refreshRateHz : medianDelta,
+        refreshRateHz,
+        measuredRefreshHz,
+        samples: settled,
         duration: timestamps.length > 0 ? now - start : 0,
       })
     }
