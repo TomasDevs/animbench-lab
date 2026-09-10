@@ -36,6 +36,20 @@ export type RunMeta = {
   duration: number
   /** Run index, for logging only. */
   repeat: number
+  /**
+   * Window during which every element is animating, in the same clock as
+   * timestamps.
+   *
+   * Stagger ramps the load up and down, so a run is not uniformly loaded even
+   * when every element eventually overlaps: the count rises from zero, peaks,
+   * then falls. Metrics computed over the whole run would mix three different
+   * loads. Absent when the scene has no ramp, in which case the whole run is
+   * the steady state.
+   */
+  steadyStateFromMs?: number
+  steadyStateToMs?: number
+  /** Elements animating simultaneously during the steady state. */
+  concurrentElements?: number
   userAgent: string
   viewport: { width: number; height: number }
   devicePixelRatio: number

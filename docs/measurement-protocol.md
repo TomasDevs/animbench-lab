@@ -57,24 +57,90 @@ adresy. Nástroj seskupuje podle nich, nikoli podle metadat. Stránka je zárove
 vrací v meta, takže případný nesoulad mezi adresou a tím, co stránka přečetla,
 jde zpětně dohledat.
 
-## Délka běhu
+## Délka běhu a ustálené okno
 
-Animace trvá déle než jmenovitá doba, protože zpoždění mezi prvky posouvá start
-posledního z nich. Skutečná délka je duration + stagger × počet prvků.
+Zpoždění mezi prvky (stagger) běží uvnitř měřeného okna: sběr razítek i animace
+začínají týmž voláním __benchStart, takže rozjezd scény je součástí záznamu.
 
-Při jmenovité době 10 s a zpoždění 4 ms mezi prvky:
+Počet současně animovaných prvků ovšem není po celý běh stejný. Prvek i startuje
+v čase i × stagger a běží po dobu duration, takže zátěž od nuly roste, chvíli se
+drží na vrcholu a pak klesá. Naměřeno u CSS transitions při dvou tisících
+prvcích, průměrné rozestupy po pětinách běhu:
 
-| Prvků | Animace | S klidovým měřením |
-|------:|--------:|-------------------:|
-|   100 |  10,4 s |             11,4 s |
-|   500 |  12,0 s |             13,0 s |
-|  2000 |  18,0 s |             19,0 s |
-|  4000 |  26,0 s |             27,0 s |
+    16,8   17,7   34,5   22,2   16,7 ms
 
-Hlavní matice o sedmi technikách, třech úrovních složitosti a deseti
-opakováních dává 210 běhů na jednu scénu, tedy zhruba 51 minut čistého času.
-S pětisekundovou prodlevou na zchladnutí je to okolo 68 minut, s desetisekundovou
-okolo 86 minut. Tři scény tedy znamenají tři až čtyři hodiny na jedno zařízení.
+Průměr z celého běhu proto míchá tři různé zátěže dohromady a zátěž podhodnocuje.
+U téhož nastavení vyšla snímková frekvence z celého běhu 20,8 FPS, kdežto
+z ustáleného okna 12,4 FPS.
+
+Stránka proto v metadatech označí ustálené okno:
+
+    steadyStateFromMs   čas, kdy se rozběhl poslední prvek
+    steadyStateToMs     čas, kdy se začal zastavovat první prvek
+    concurrentElements  počet prvků animovaných současně v tomto okně
+
+Obě značky jsou v téže časové ose jako timestamps. Nástroj z nich počítá metriky
+jen nad ustáleným oknem, zatímco surová razítka ukládá nezkrácená, aby šel profil
+zátěže analyzovat zpětně a při změně kritéria přepočítat bez nového měření.
+
+### Volba doby trvání
+
+Konstantní má být měřené okno, nikoli celý běh. Doba trvání se proto odvozuje
+z požadované šířky okna:
+
+    duration = okno + stagger × (počet prvků − 1)
+
+Adresa přijímá parametr window a duration si dopočítá sama. Při okně deseti
+sekund a zpoždění 4 ms na prvek:
+
+| Prvků | Okno | duration | Délka běhu |
+|------:|-----:|---------:|-----------:|
+|   100 | 10 s |   10,4 s |     10,8 s |
+|   500 | 20 s |   22,0 s |     24,0 s |
+|  2000 | 30 s |   38,0 s |     46,0 s |
+
+Běhy jsou různě dlouhé, ale měřené okno má vždy zadanou šířku. Nestejná zůstává
+jen doba rozjezdu, která se neměří. Okno se u vyšších složitostí rozšiřuje, aby
+v něm zbylo dost snímků; důvod je v následující kapitole.
+
+Hlavní matice o sedmi technikách, třech úrovních složitosti a deseti opakováních
+dává 210 běhů na scénu. Při těchto dobách vychází zhruba 1,9 hodiny na scénu,
+tedy asi 6 hodin na zařízení pro tři scény, s pětisekundovou prodlevou na
+zchladnutí.
+
+### Počet snímků v okně
+
+Šířka okna v sekundách neurčuje počet vzorků: čím pomalejší technika, tím méně
+snímků se do okna vejde. Právě tam, kde je rozdíl mezi technikami největší, je
+tedy dat nejméně.
+
+Naměřeno u CSS transitions při okně přizpůsobeném složitosti:
+
+| Prvků | Okno | FPS v okně | Snímků v okně |
+|------:|-----:|-----------:|--------------:|
+|   500 | 20 s |       59,7 |          1075 |
+|  2000 | 30 s |  11,8–25,1 |       260–753 |
+|  4000 | 40 s |        3,4 |            82 |
+
+Rozpětí u dvou tisíc prvků vzniklo mezi dvěma měřicími stroji; obě hodnoty
+překračují stovku vzorků, která je pro pátý percentil potřeba.
+
+Prodlužovat okno donekonečna nelze. Aby při čtyřech tisících prvcích vzniklo tři
+sta vzorků, muselo by okno trvat 88 sekund a celý běh přes dvě minuty, což naráží
+na časový limit nástroje.
+
+Proto se čtyři tisíce prvků do hlavní matice nezařazují. Hlavní matice pracuje se
+sty, pěti sty a dvěma tisíci prvky, kde počet vzorků na percentily stačí. Vyšší
+složitosti se měří jen v samostatném experimentu k VO5, kde se hledá práh
+plynulosti a percentily nejsou potřeba.
+
+Počet snímků v okně se zaznamenává ke každému běhu. Běh s méně než stovkou
+vzorků se do výpočtu percentilů nezahrnuje a v práci se uvádí zvlášť.
+
+Pokud okno nevznikne vůbec, protože poslední prvek startuje až po zastavení
+prvního, scéna nikdy neanimuje všechny prvky naráz. Pro sweep k VO5 se proto
+vedle zadané složitosti uvádí hodnota concurrentElements, která odpovídá
+skutečné souběžné zátěži.
 
 ## Prostředí
 

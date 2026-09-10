@@ -41,3 +41,22 @@ export function specFor(scene: SceneId, duration?: number): AnimationSpec {
     keyframes: base.keyframes.map((frame) => ({ ...frame })),
   }
 }
+
+/**
+ * Duration that yields a steady-state window of the requested width.
+ *
+ * The window runs from when the last element starts, stagger * (n - 1), to when
+ * the first one stops, at duration. Solving for duration keeps the measured
+ * window constant across complexities while only the unmeasured ramp-up grows.
+ */
+export function durationForWindow(
+  spec: AnimationSpec,
+  elementCount: number,
+  windowMs: number,
+): number {
+  if (elementCount <= 1) return windowMs
+  return windowMs + spec.stagger * (elementCount - 1)
+}
+
+/** Steady-state window the main matrix measures over, ms. */
+export const STEADY_WINDOW_MS = 10_000

@@ -10,6 +10,11 @@ export type BenchParams = {
   seed: number
   /** ms */
   duration: number
+  /**
+   * Requested steady-state window in ms. When present, duration is derived from
+   * it so the measured window stays constant across complexities.
+   */
+  window?: number
   mode: BenchMode
   /** Run index, for logging only. */
   repeat: number
@@ -52,6 +57,9 @@ export function readParams(search: string = window.location.search): BenchParams
     complexity: intParam(source, 'complexity', DEFAULTS.complexity, 1, 20_000),
     seed: intParam(source, 'seed', DEFAULTS.seed, 0, Number.MAX_SAFE_INTEGER),
     duration: intParam(source, 'duration', DEFAULTS.duration, 100, 600_000),
+    window: source.get('window') === null
+      ? undefined
+      : intParam(source, 'window', DEFAULTS.duration, 100, 600_000),
     mode: mode === 'demo' ? 'demo' : DEFAULTS.mode,
     repeat: intParam(source, 'repeat', DEFAULTS.repeat, 0, 10_000),
   }
@@ -65,6 +73,7 @@ export function buildUrl(params: BenchParams, base = window.location.pathname): 
     complexity: String(params.complexity),
     seed: String(params.seed),
     duration: String(params.duration),
+    ...(params.window === undefined ? {} : { window: String(params.window) }),
     mode: params.mode,
     repeat: String(params.repeat),
   })

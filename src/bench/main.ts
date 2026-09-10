@@ -1,7 +1,8 @@
 import { loadAdapter, allAdapterMeta } from '../adapters/index.ts'
 import { loadScene, availableScenes } from '../scenes/index.ts'
-import { specFor } from '../scenes/specs.ts'
+import { durationForWindow, specFor } from '../scenes/specs.ts'
 import { collectMeta, markReady, prepareProbe } from '../probe/index.ts'
+import { steadyStateFor } from '../probe/steady-state.ts'
 import { readParams } from './params.ts'
 
 /**
@@ -21,7 +22,14 @@ async function main(): Promise<void> {
     seed: params.seed,
   })
 
-  const spec = specFor(params.scene, params.duration)
+  // When a window is requested, duration is derived so the steady state is that
+  // wide regardless of complexity: only the unmeasured ramp-up grows.
+  const baseSpec = specFor(params.scene)
+  const duration =
+    params.window === undefined
+      ? params.duration
+      : durationForWindow(baseSpec, scene.elements.length, params.window)
+  const spec = specFor(params.scene, duration)
   const Adapter = await loadAdapter(params.technique)
   const adapter = new Adapter()
   adapter.init({
@@ -31,13 +39,18 @@ async function main(): Promise<void> {
     scene: params.scene,
   })
 
+  // Marks the stretch where every element is animating, so the tool can compute
+  // metrics over a constant load instead of averaging the ramp in.
+  const steady = steadyStateFor(spec, scene.elements.length)
+
   const meta = collectMeta({
     technique: params.technique,
     scene: params.scene,
     complexity: params.complexity,
     seed: params.seed,
-    duration: params.duration,
+    duration,
     repeat: params.repeat,
+    concurrentElements: steady.concurrentElements,
   })
 
   // Imported only in demo mode, so bench mode never downloads or executes it.
@@ -76,7 +89,11 @@ async function main(): Promise<void> {
 
   const runOnce = (): Promise<void> =>
     new Promise((resolve) => {
+      const runStart = performance.now()
       handle.begin()
+      // Same clock as timestamps, so the tool can slice without conversion.
+      meta.steadyStateFromMs = runStart + steady.fromMs
+      meta.steadyStateToMs = runStart + steady.toMs
       startMeter()
       panel?.setStatus('running')
 
