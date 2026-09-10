@@ -7,6 +7,8 @@ import type { AdapterConstructor } from '../types/adapter.ts'
 const loaders: Record<string, () => Promise<AdapterConstructor>> = {
   raf: () => import('./raf.ts').then((m) => m.RafAdapter),
   'css-transition': () => import('./css-transition.ts').then((m) => m.CssTransitionAdapter),
+  'css-keyframes': () => import('./css-keyframes.ts').then((m) => m.CssKeyframesAdapter),
+  gsap: () => import('./gsap.ts').then((m) => m.GsapAdapter),
   waapi: () => import('./waapi.ts').then((m) => m.WaapiAdapter),
 }
 
