@@ -9,6 +9,7 @@ const loaders: Record<string, () => Promise<AdapterConstructor>> = {
   'css-transition': () => import('./css-transition.ts').then((m) => m.CssTransitionAdapter),
   'css-keyframes': () => import('./css-keyframes.ts').then((m) => m.CssKeyframesAdapter),
   gsap: () => import('./gsap.ts').then((m) => m.GsapAdapter),
+  motion: () => import('./motion.ts').then((m) => m.MotionAdapter),
   waapi: () => import('./waapi.ts').then((m) => m.WaapiAdapter),
 }
 
