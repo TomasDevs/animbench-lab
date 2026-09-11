@@ -246,6 +246,31 @@ třetina snímků rozpočet překročila.
 Matice není vyvážená, protože ne každá technika zvládne každou scénu. Scéna se
 proto vyhodnocuje zvlášť jako samostatná matice technik a složitostí.
 
+## Scroll-driven animace
+
+Animace řízené posunem stránky nelze měřit stejným postupem jako ostatní
+techniky. Ověřeno v prohlížeči: bez posunu zůstane časová osa nedefinovaná
+(currentTime je null) a animace se nepohne, přestože je ve stavu running. Doba
+trvání ji neřídí, řídí ji poloha posuvníku.
+
+Z toho plynou tři důsledky.
+
+Scéna grid tuto techniku nepodporuje. Měřicí stránka má zakázaný posun a scéna
+vyplňuje přesně viewport, takže není co posouvat. Adaptér si posuvník vytvořit
+nesmí, protože by tím měnil strukturu scény.
+
+Technika se proto měří výhradně na scéně parallax, kde je posun součástí zadání.
+Měřené okno se nevymezuje časem, ale ujetou vzdáleností posuvníku.
+
+Posun syntetizuje nástroj protokolem vývojářských nástrojů jako plynulý pohyb
+s pevnou rychlostí, shodnou pro všechny techniky. Nastavení vlastnosti scrollTop
+sice událost posunu vyvolá, hodnota však skočí naráz, takže vznikne jeden velký
+přírůstek místo plynulého pohybu a obejde se cesta přes kompozitor.
+
+Do doby, než scéna parallax vznikne, zůstává scroll-driven mimo matici. Kdyby se
+ukázalo, že ani na scéně parallax nejde měřit srovnatelně, přesune se do
+zvláštního režimu k View Transitions a Lottie.
+
 ## Skriptovaný posun stránky
 
 Scéna parallax vyžaduje posun stránky. Ten se syntetizuje protokolem
