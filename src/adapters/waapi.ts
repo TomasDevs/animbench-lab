@@ -15,7 +15,7 @@ export class WaapiAdapter implements Adapter {
   static readonly meta: AdapterMeta = {
     id: 'waapi',
     label: 'Web Animations API',
-    scenes: ['grid', 'parallax', 'composite'],
+    scenes: ['grid', 'composite'],
   }
 
   #ctx: AdapterContext | null = null

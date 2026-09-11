@@ -51,3 +51,21 @@ export function steadyStateFor(spec: AnimationSpec, elementCount: number): Stead
     fullOverlap: false,
   }
 }
+
+/**
+ * Steady state for a scene driven by scroller position rather than stagger.
+ *
+ * The window is expressed in timestamps like every other scene, so the contract
+ * stays the same and the tool needs no special case. Both ends are trimmed: the
+ * scroller needs a moment to reach a constant rate, and the final frames land
+ * after it has stopped.
+ */
+export function scrollSteadyState(durationMs: number, elementCount: number): SteadyState {
+  const trim = Math.min(durationMs * 0.1, 500)
+  return {
+    fromMs: trim,
+    toMs: Math.max(trim, durationMs - trim),
+    concurrentElements: elementCount,
+    fullOverlap: true,
+  }
+}

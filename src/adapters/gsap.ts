@@ -17,7 +17,7 @@ export class GsapAdapter implements Adapter {
   static readonly meta: AdapterMeta = {
     id: 'gsap',
     label: 'GSAP',
-    scenes: ['grid', 'parallax', 'composite'],
+    scenes: ['grid', 'composite'],
   }
 
   #ctx: AdapterContext | null = null

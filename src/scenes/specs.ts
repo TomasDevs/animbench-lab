@@ -44,9 +44,30 @@ const COMPOSITE_SPEC: AnimationSpec = {
   ],
 }
 
+/**
+ * Parallax: layers travelling at different speeds. Serves VO4.
+ *
+ * The spec describes one full sweep of the scroller. Per-layer speed comes from
+ * the scene, not from here, so every technique still receives one identical
+ * spec and only the element's layer decides how far it moves.
+ */
+const PARALLAX_SPEC: AnimationSpec = {
+  duration: 10_000,
+  iterations: 1,
+  easing: 'linear',
+  // Layers move together; the offset between them is spatial, not temporal.
+  stagger: 0,
+  keyframes: [
+    { offset: 0, translateX: 0, translateY: 0, scale: 1, rotate: 0, opacity: 1 },
+    { offset: 0.5, translateX: 0, translateY: -200, scale: 1, rotate: 0, opacity: 1 },
+    { offset: 1, translateX: 0, translateY: -400, scale: 1, rotate: 0, opacity: 1 },
+  ],
+}
+
 const specs: Partial<Record<SceneId, AnimationSpec>> = {
   grid: GRID_SPEC,
   composite: COMPOSITE_SPEC,
+  parallax: PARALLAX_SPEC,
 }
 
 /**

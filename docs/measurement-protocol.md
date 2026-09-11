@@ -271,30 +271,42 @@ třetina snímků rozpočet překročila.
 Matice není vyvážená, protože ne každá technika zvládne každou scénu. Scéna se
 proto vyhodnocuje zvlášť jako samostatná matice technik a složitostí.
 
-## Scroll-driven animace
+## Scroll-driven animace a scéna parallax
 
-Animace řízené posunem stránky nelze měřit stejným postupem jako ostatní
-techniky. Ověřeno v prohlížeči: bez posunu zůstane časová osa nedefinovaná
-(currentTime je null) a animace se nepohne, přestože je ve stavu running. Doba
-trvání ji neřídí, řídí ji poloha posuvníku.
+Animace řízené posunem nelze měřit stejným postupem jako ostatní techniky.
+Ověřeno v prohlížeči: bez posunu zůstane časová osa nedefinovaná (currentTime je
+null) a animace se nepohne, přestože je ve stavu running. Doba trvání ji neřídí,
+řídí ji poloha posuvníku.
 
-Z toho plynou tři důsledky.
+Scéna parallax proto staví vlastní posuvník uvnitř scény a vystavuje jej jako
+pojmenovanou časovou osu --animbench-scroll. Měřicí stránka má posun stránky
+zakázaný a adaptér si posuvník vytvořit nesmí, protože by měnil strukturu scény.
 
-Scéna grid tuto techniku nepodporuje. Měřicí stránka má zakázaný posun a scéna
-vyplňuje přesně viewport, takže není co posouvat. Adaptér si posuvník vytvořit
-nesmí, protože by tím měnil strukturu scény.
+Posun řídí adaptér programově, rovnoměrnou rychlostí přes celý rozsah za dobu
+zadanou ve specifikaci. Ověřeno, že nastavení scrollTop posune časovou osu
+scroll-driven animace (currentTime dosáhl 50 % v polovině rozsahu), takže není
+potřeba syntetizovat vstupní gesto protokolem vývojářských nástrojů.
 
-Technika se proto měří výhradně na scéně parallax, kde je posun součástí zadání.
-Měřené okno se nevymezuje časem, ale ujetou vzdáleností posuvníku.
+### Proč scroll-driven nepatří do hlavní matice
 
-Posun syntetizuje nástroj protokolem vývojářských nástrojů jako plynulý pohyb
-s pevnou rychlostí, shodnou pro všechny techniky. Nastavení vlastnosti scrollTop
-sice událost posunu vyvolá, hodnota však skočí naráz, takže vznikne jeden velký
-přírůstek místo plynulého pohybu a obejde se cesta přes kompozitor.
+Techniky řízené časem na scéně parallax neprodukují parallax. Ověřeno u všech
+čtyř: posuvníkem nepohnou vůbec a všechny vrstvy posunou stejně, protože
+specifikace je pro všechny prvky totožná a rychlost vrstvy je vlastnost scény,
+nikoli specifikace.
 
-Do doby, než scéna parallax vznikne, zůstává scroll-driven mimo matici. Kdyby se
-ukázalo, že ani na scéně parallax nejde měřit srovnatelně, přesune se do
-zvláštního režimu k View Transitions a Lottie.
+Scéna parallax tedy nemá referenční implementaci, proti které by se dala ověřit
+ekvivalence trajektorií. Bez ověření ekvivalence nelze techniku do hlavní matice
+zařadit, protože by se neměřila technika, ale rozdíl v zadání.
+
+Scroll-driven animace se proto vyhodnocují ve zvláštním režimu spolu s View
+Transitions API a nástrojem Lottie. Pro VO4 to znamená, že se neporovnává
+s ostatními technikami na téže scéně, ale hodnotí se samostatně: sleduje se počet
+výpadků snímků během posunu, nejdelší snímek a rovnoměrnost rozestupů.
+
+Alternativa, tedy naučit časem řízené adaptéry číst rychlost vrstvy ze scény
+a řídit posuvník, by znamenala, že adaptér neanimuje podle specifikace, ale podle
+vlastnosti scény. Tím by přestala platit zásada, že všechny adaptéry dostávají
+tentýž předpis a liší se jen překladem.
 
 ## Skriptovaný posun stránky
 

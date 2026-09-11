@@ -2,7 +2,7 @@ import { loadAdapter, allAdapterMeta } from '../adapters/index.ts'
 import { loadScene, availableScenes } from '../scenes/index.ts'
 import { durationForWindow, specFor } from '../scenes/specs.ts'
 import { collectMeta, markReady, prepareProbe } from '../probe/index.ts'
-import { steadyStateFor } from '../probe/steady-state.ts'
+import { scrollSteadyState, steadyStateFor } from '../probe/steady-state.ts'
 import { readParams } from './params.ts'
 
 /**
@@ -41,7 +41,12 @@ async function main(): Promise<void> {
 
   // Marks the stretch where every element is animating, so the tool can compute
   // metrics over a constant load instead of averaging the ramp in.
-  const steady = steadyStateFor(spec, scene.elements.length)
+  // Scroll-driven scenes have no stagger ramp; their window is trimmed at both
+  // ends instead, where the scroller is still accelerating or has stopped.
+  const steady =
+    spec.stagger === 0
+      ? scrollSteadyState(spec.duration, scene.elements.length)
+      : steadyStateFor(spec, scene.elements.length)
 
   const meta = collectMeta({
     technique: params.technique,

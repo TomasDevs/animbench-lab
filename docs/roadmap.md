@@ -50,8 +50,14 @@ Scéna composite je hotová a ověřená. Je první, kde scale a rotate nejsou
 neutrální, takže teprve na ní se dá ověřit pořadí transformačních funkcí; na
 mřížce by rozdíl zůstal skrytý, protože neutrální hodnoty dávají tutéž matici.
 
-Zbývá scéna parallax pro VO4, která vyžaduje skriptovaný posun stránky a je
-zároveň podmínkou pro adaptér scroll-driven.
+Scéna parallax je hotová. Staví vlastní posuvník uvnitř scény a vystavuje jej
+jako pojmenovanou časovou osu, na kterou se váže adaptér scroll-driven. Posun
+řídí adaptér programově, syntetizované vstupní gesto není potřeba.
+
+Scroll-driven se měří ve zvláštním režimu, nikoli v hlavní matici: techniky
+řízené časem na scéně parallax neprodukují parallax, takže scéna nemá referenční
+implementaci a ekvivalence trajektorií pro ni není definovaná. Odůvodnění je
+v docs/measurement-protocol.md.
 
 Samostatný experiment pro VO5: sweep přes 50, 100, 250, 500, 1000, 2000 a 4000
 prvků s hledáním bodu, kde medián klesne pod práh odvozený z rozpočtu zařízení.
@@ -60,8 +66,8 @@ Menší podmnožina technik, jinak počet běhů naroste nesmyslně.
 Vstupní bod react.html pro srovnání vanilla Motion proti React Motion. Vyjde
 z něj čistá režie frameworku.
 
-Zvláštní režim s vlastní procedurou: View Transitions API a Lottie. Do hlavní
-statistiky nevstupují.
+Zvláštní režim s vlastní procedurou: scroll-driven animace, View Transitions API
+a Lottie. Do hlavní statistiky nevstupují.
 
 Srovnávací tabulka pro VO6. Neměří se, hodnotí se: zda technika respektuje
 prefers-reduced-motion sama od sebe, jak nákladné je ruční ošetření a zda jde

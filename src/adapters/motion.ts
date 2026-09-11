@@ -18,7 +18,7 @@ export class MotionAdapter implements Adapter {
   static readonly meta: AdapterMeta = {
     id: 'motion',
     label: 'Motion',
-    scenes: ['grid', 'parallax', 'composite'],
+    scenes: ['grid', 'composite'],
   }
 
   #ctx: AdapterContext | null = null

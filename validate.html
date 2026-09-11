@@ -33,14 +33,18 @@
 
     <script type="module">
       import { validateTechnique, TOLERANCE_PX } from '/src/validate/index.ts'
-      import { loadAdapter, availableAdapters, REFERENCE_ADAPTER_ID } from '/src/adapters/index.ts'
+      import { loadAdapter, availableAdapters, REFERENCE_ADAPTER_ID, SEPARATE_REGIME_IDS } from '/src/adapters/index.ts'
       import { availableScenes } from '/src/scenes/index.ts'
 
       const stage = document.getElementById('stage')
       const status = document.getElementById('status')
       const results = document.getElementById('results')
 
-      const candidates = availableAdapters().filter((id) => id !== REFERENCE_ADAPTER_ID)
+      // Separate-regime techniques have no reference on their scene, so
+      // trajectory equivalence is not defined for them.
+      const candidates = availableAdapters().filter(
+        (id) => id !== REFERENCE_ADAPTER_ID && !SEPARATE_REGIME_IDS.includes(id),
+      )
       const scenes = availableScenes()
       const reports = []
 

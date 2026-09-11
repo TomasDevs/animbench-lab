@@ -10,11 +10,21 @@ const loaders: Record<string, () => Promise<AdapterConstructor>> = {
   'css-keyframes': () => import('./css-keyframes.ts').then((m) => m.CssKeyframesAdapter),
   gsap: () => import('./gsap.ts').then((m) => m.GsapAdapter),
   motion: () => import('./motion.ts').then((m) => m.MotionAdapter),
+  'scroll-driven': () => import('./scroll-driven.ts').then((m) => m.ScrollDrivenAdapter),
   waapi: () => import('./waapi.ts').then((m) => m.WaapiAdapter),
 }
 
 /** The reference implementation every other technique is validated against. */
 export const REFERENCE_ADAPTER_ID = 'raf'
+
+/**
+ * Techniques measured outside the main matrix, with their own procedure.
+ *
+ * Scroll-driven animations are driven by scroller position rather than by time,
+ * so the reference cannot produce the same trajectory on the same scene and
+ * trajectory equivalence is not defined for them.
+ */
+export const SEPARATE_REGIME_IDS: readonly string[] = ['scroll-driven']
 
 export async function loadAdapter(id: string): Promise<AdapterConstructor> {
   const loader = loaders[id]

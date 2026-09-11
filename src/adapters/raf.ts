@@ -13,7 +13,7 @@ export class RafAdapter implements Adapter {
   static readonly meta: AdapterMeta = {
     id: 'raf',
     label: 'requestAnimationFrame',
-    scenes: ['grid', 'parallax', 'composite'],
+    scenes: ['grid', 'composite'],
   }
 
   #ctx: AdapterContext | null = null
