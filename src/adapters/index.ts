@@ -11,6 +11,7 @@ const loaders: Record<string, () => Promise<AdapterConstructor>> = {
   gsap: () => import('./gsap.ts').then((m) => m.GsapAdapter),
   motion: () => import('./motion.ts').then((m) => m.MotionAdapter),
   'scroll-driven': () => import('./scroll-driven.ts').then((m) => m.ScrollDrivenAdapter),
+  'view-transition': () => import('./view-transition.ts').then((m) => m.ViewTransitionAdapter),
   waapi: () => import('./waapi.ts').then((m) => m.WaapiAdapter),
 }
 
@@ -24,7 +25,7 @@ export const REFERENCE_ADAPTER_ID = 'raf'
  * so the reference cannot produce the same trajectory on the same scene and
  * trajectory equivalence is not defined for them.
  */
-export const SEPARATE_REGIME_IDS: readonly string[] = ['scroll-driven']
+export const SEPARATE_REGIME_IDS: readonly string[] = ['scroll-driven', 'view-transition']
 
 export async function loadAdapter(id: string): Promise<AdapterConstructor> {
   const loader = loaders[id]

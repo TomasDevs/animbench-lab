@@ -308,6 +308,44 @@ a řídit posuvník, by znamenala, že adaptér neanimuje podle specifikace, ale
 vlastnosti scény. Tím by přestala platit zásada, že všechny adaptéry dostávají
 tentýž předpis a liší se jen překladem.
 
+## View Transitions API
+
+Rozhraní vytváří jednorázový přechod mezi dvěma stavy dokumentu. Nemá dobu, jakou
+by vyplnilo, ani posloupnost klíčových snímků, kterou by sledovalo: prohlížeč
+pořídí snímek původního stavu a dopočítá přechod k novému. Průměrná snímková
+frekvence za desetisekundový běh u něj proto nedává smysl.
+
+Ze specifikace se čtou pouze krajní polohy. Běh provede jeden přechod z prvního
+klíčového snímku do toho nejvzdálenějšího. Poslední snímek se záměrně nepoužívá,
+protože cyklická specifikace končí tam, kde začala, a přechod do ní by nepohnul
+ničím.
+
+### Chování při rostoucí složitosti
+
+Každý prvek dostane vlastní jméno přechodu, jinak by je prohlížeč sejmul jako
+jeden celek a animoval jediný obdélník místo jednotlivých prvků. Počet animací
+pseudoprvků tím roste přibližně pětinásobkem počtu prvků; při pěti stech prvcích
+jich bylo naměřeno 2505.
+
+Naměřeno na scéně grid:
+
+| Prvků | Medián rozestupu | Nejdelší snímek | Snímků v běhu |
+|------:|-----------------:|----------------:|--------------:|
+|    25 |          16,7 ms |         49,9 ms |            71 |
+|    50 |          16,7 ms |         33,3 ms |            84 |
+|   100 |          16,7 ms |         33,4 ms |           104 |
+|   200 |          33,3 ms |         83,4 ms |            67 |
+|   500 |         482,7 ms |        6799,8 ms |             4 |
+
+Do sta prvků technika drží snímkový rozpočet. Při dvou stech se medián zdvojnásobí
+a při pěti stech se stránka prakticky zastaví: příprava přechodu trvala 7,7
+sekundy a sonda zachytila čtyři snímky.
+
+Technika se proto měří jen do dvou set prvků a hodnotí se jinými veličinami než
+hlavní matice: dobou přípravy přechodu, celkovou délkou přechodu, počtem výpadků
+během něj a nejdelším snímkem. Sama nestabilita při vyšších počtech je výsledkem,
+nikoli překážkou měření.
+
 ## Skriptovaný posun stránky
 
 Scéna parallax vyžaduje posun stránky. Ten se syntetizuje protokolem
