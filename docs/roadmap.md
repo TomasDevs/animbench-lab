@@ -70,9 +70,8 @@ Zvláštní režim je hotový: scroll-driven animace, View Transitions API a Lot
 Do hlavní statistiky nevstupují a každá má vlastní proceduru i vlastní veličiny,
 popsané v docs/measurement-protocol.md.
 
-Srovnávací tabulka pro VO6. Neměří se, hodnotí se: zda technika respektuje
-prefers-reduced-motion sama od sebe, jak nákladné je ruční ošetření a zda jde
-animaci zastavit kvůli kritériu WCAG 2.2.2.
+Srovnávací tabulka pro VO6 je hotová v docs/vo6-accessibility.md. Vlastnosti
+technik byly ověřeny v prohlížeči, nikoli převzaty z dokumentace.
 
 ## Nakonec
 
