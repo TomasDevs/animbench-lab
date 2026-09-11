@@ -7,6 +7,7 @@ import type { SceneGenerator } from '../types/scene-generator.ts'
  */
 const loaders: Partial<Record<SceneId, () => Promise<SceneGenerator>>> = {
   grid: () => import('./grid.ts').then((m) => m.gridScene),
+  composite: () => import('./composite.ts').then((m) => m.compositeScene),
 }
 
 export async function loadScene(id: SceneId): Promise<SceneGenerator> {

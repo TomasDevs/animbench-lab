@@ -22,8 +22,31 @@ const GRID_SPEC: AnimationSpec = {
   ],
 }
 
+/**
+ * Composite: translate, scale, rotate and opacity all in motion at once.
+ *
+ * The first spec where scale and rotate are not neutral, so it is the one that
+ * actually exercises transform function order. A library that rewrites the
+ * transform string produces a different matrix here, where on the grid the
+ * neutral values hid the difference.
+ */
+const COMPOSITE_SPEC: AnimationSpec = {
+  duration: 10_000,
+  iterations: 1,
+  easing: 'linear',
+  stagger: 4,
+  keyframes: [
+    { offset: 0, translateX: 0, translateY: 0, scale: 1, rotate: 0, opacity: 1 },
+    { offset: 0.25, translateX: 32, translateY: -20, scale: 1.4, rotate: 90, opacity: 0.6 },
+    { offset: 0.5, translateX: 0, translateY: -40, scale: 0.7, rotate: 180, opacity: 1 },
+    { offset: 0.75, translateX: -32, translateY: -20, scale: 1.4, rotate: 270, opacity: 0.6 },
+    { offset: 1, translateX: 0, translateY: 0, scale: 1, rotate: 360, opacity: 1 },
+  ],
+}
+
 const specs: Partial<Record<SceneId, AnimationSpec>> = {
   grid: GRID_SPEC,
+  composite: COMPOSITE_SPEC,
 }
 
 /**

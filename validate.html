@@ -33,18 +33,26 @@
 
     <script type="module">
       import { validateTechnique, TOLERANCE_PX } from '/src/validate/index.ts'
-      import { availableAdapters, REFERENCE_ADAPTER_ID } from '/src/adapters/index.ts'
+      import { loadAdapter, availableAdapters, REFERENCE_ADAPTER_ID } from '/src/adapters/index.ts'
+      import { availableScenes } from '/src/scenes/index.ts'
 
       const stage = document.getElementById('stage')
       const status = document.getElementById('status')
       const results = document.getElementById('results')
 
       const candidates = availableAdapters().filter((id) => id !== REFERENCE_ADAPTER_ID)
+      const scenes = availableScenes()
       const reports = []
 
       for (const technique of candidates) {
-        status.textContent = `Validating ${technique}…`
-        reports.push(await validateTechnique(stage, technique))
+        const { meta } = await loadAdapter(technique)
+        // Only scenes the technique claims to support, and only those that
+        // actually exist yet.
+        for (const scene of scenes.filter((s) => meta.scenes.includes(s))) {
+          status.textContent = `Validating ${technique} on ${scene}…`
+          const report = await validateTechnique(stage, technique, { scene })
+          reports.push({ ...report, scene })
+        }
       }
 
       const table = document.createElement('table')
@@ -52,6 +60,7 @@
         <thead>
           <tr>
             <th>technique</th>
+            <th>scene</th>
             <th>max Δ</th>
             <th>lag</th>
             <th>Δ after lag</th>
@@ -66,6 +75,7 @@
         const row = document.createElement('tr')
         row.innerHTML = `
           <td>${r.technique}</td>
+          <td>${r.scene}</td>
           <td>${r.maxDeltaPx.toFixed(2)} px</td>
           <td>${r.estimatedLagMs.toFixed(1)} ms</td>
           <td>${r.maxDeltaLagCorrectedPx.toFixed(3)} px</td>
@@ -83,7 +93,7 @@
       results.append(details)
 
       status.textContent = reports.every((r) => r.equivalent)
-        ? `All ${reports.length} technique(s) equivalent to the ${REFERENCE_ADAPTER_ID} reference.`
+        ? `All ${reports.length} technique/scene pair(s) equivalent to the ${REFERENCE_ADAPTER_ID} reference.`
         : 'At least one technique diverges from the reference.'
 
       window.__validation = reports

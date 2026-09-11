@@ -97,16 +97,16 @@ sekund a zpoždění 4 ms na prvek:
 |------:|-----:|---------:|-----------:|
 |   100 | 10 s |   10,4 s |     10,8 s |
 |   500 | 20 s |   22,0 s |     24,0 s |
-|  2000 | 30 s |   38,0 s |     46,0 s |
+|  2000 | 20 s |   28,0 s |     36,0 s |
 
 Běhy jsou různě dlouhé, ale měřené okno má vždy zadanou šířku. Nestejná zůstává
 jen doba rozjezdu, která se neměří. Okno se u vyšších složitostí rozšiřuje, aby
 v něm zbylo dost snímků; důvod je v následující kapitole.
 
 Hlavní matice o sedmi technikách, třech úrovních složitosti a deseti opakováních
-dává 210 běhů na scénu. Při těchto dobách vychází zhruba 1,9 hodiny na scénu,
-tedy asi 6 hodin na zařízení pro tři scény, s pětisekundovou prodlevou na
-zchladnutí.
+dává 210 běhů na scénu. Při těchto dobách a patnáctisekundové prodlevě na
+zchladnutí vychází zhruba 2,3 hodiny na scénu, tedy asi 7 hodin na zařízení pro
+tři scény.
 
 ### Počet snímků v okně
 
@@ -166,6 +166,30 @@ Velikost okna proto musí být u všech technik i všech opakování shodná a z
 se ke každému běhu. Bez toho by se místo rozdílu mezi technikami měřil rozdíl
 v rozvržení.
 
+## Rozptyl u dlouhých běhů
+
+Širší okno dává víc vzorků, ale u dlouhých běhů roste rozptyl mezi opakováními
+natolik, že se získaná přesnost ztrácí. Naměřeno u CSS transitions při dvou
+tisících prvcích:
+
+| Okno | Vzorků v okně | Rozptyl mezi opakováními |
+|-----:|--------------:|-------------------------:|
+| 10 s |           346 |                    9,8 % |
+| 30 s |           790 |                   30,3 % |
+
+Na jednom ze dvou měřicích strojů přitom hodnoty v pořadí provedení klesaly
+z 43,7 na 19,8 snímků za sekundu, tedy o 55 procent. Oba stroje jsou MacBook Air
+s pasivním chlazením, takže se při šestačtyřicetisekundových bězích zahřejí
+a výkon klesne. Na druhém stroji monotónní pokles nenastal, ale rozptyl byl
+srovnatelný, 29 procent. Tepelné škrcení tedy není jedinou příčinou.
+
+Okno se proto u dvou tisíc prvků drží na dvaceti sekundách, nikoli na třiceti,
+a prodleva mezi běhy se prodlužuje na patnáct sekund. Vzorků zbývá dost a stroj
+mezi běhy vychladne.
+
+Pasivní chlazení je vlastnost testovacího zařízení, nikoli metody, a jako takové
+patří do metodiky. Na aktivně chlazeném stroji by delší okno problém nedělalo.
+
 ## Pořadí a prodlevy
 
 Pořadí běhů je náhodné, aby se tepelné škrcení rozložilo rovnoměrně mezi
@@ -173,6 +197,7 @@ techniky. Kdyby se měřily po blocích, poslední technika by systematicky bě�
 na teplejším stroji.
 
 Mezi běhy se drží pevná prodleva na zchladnutí, shodná pro všechny kombinace.
+Na pasivně chlazených zařízeních patnáct sekund, viz předchozí kapitolu.
 
 První běh každé kombinace je rozehřívací a zahazuje se.
 

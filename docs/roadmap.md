@@ -46,10 +46,12 @@ Zbývá scroll-driven, který ovšem nelze doplnit dřív než scénu parallax. 
 že bez posunu se animace nepohne vůbec, a scéna grid posuvník nemá; podrobnosti
 v docs/measurement-protocol.md.
 
-Scény, zbývají dvě: parallax pro VO4, který vyžaduje skriptovaný posun stránky
-a je zároveň podmínkou pro adaptér scroll-driven, a composite pro VO2 při vyšší
-zátěži. Scéna composite bude první, kde se projeví scale a rotate, takže u ní
-bude ověření ekvivalence přísnější než u mřížky.
+Scéna composite je hotová a ověřená. Je první, kde scale a rotate nejsou
+neutrální, takže teprve na ní se dá ověřit pořadí transformačních funkcí; na
+mřížce by rozdíl zůstal skrytý, protože neutrální hodnoty dávají tutéž matici.
+
+Zbývá scéna parallax pro VO4, která vyžaduje skriptovaný posun stránky a je
+zároveň podmínkou pro adaptér scroll-driven.
 
 Samostatný experiment pro VO5: sweep přes 50, 100, 250, 500, 1000, 2000 a 4000
 prvků s hledáním bodu, kde medián klesne pod práh odvozený z rozpočtu zařízení.
