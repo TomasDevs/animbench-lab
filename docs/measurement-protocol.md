@@ -376,6 +376,24 @@ jeden velký přírůstek místo plynulého pohybu a obejde se cesta přes kompo
 
 Rychlost posunu je pevná a shodná pro všechny techniky.
 
+## React Motion
+
+Doplňkové měření mimo hlavní matici. Porovnává knihovnu Motion v podobě pro
+React proti téže knihovně ve vanilla podobě a izoluje tím režii frameworku.
+
+Vstupní bod react.html vystavuje týž kontrakt jako bench.html, takže jej nástroj
+měří stejným postupem. Parametry adresy jsou shodné, jen se neuvádí technika:
+stránka se hlásí jako react-motion.
+
+Scéna vzniká ze stejného seedovaného generátoru jako u vanilla varianty. Ověřeno,
+že rozvržení obou variant je shodné, včetně pozic, rozměrů i barev jednotlivých
+prvků. Bez toho by se neměřila režie frameworku, ale rozdíl ve scéně.
+
+Komponenta je psána idiomaticky pro React, tedy jako pohybová komponenta řízená
+vlastnostmi. Napsat ji jako volání vanilla rozhraní by srovnání zbavilo smyslu,
+protože právě způsob použití je tím, co se porovnává. Transformace se přesto
+zapisuje jediným řetězcem, aby zůstalo zachováno pořadí funkcí.
+
 ## Omezení, která patří do metodiky
 
 - Měření je vázané na jádro Chromium. Ve Firefoxu a Safari lze doplňkově změřit

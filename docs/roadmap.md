@@ -63,8 +63,10 @@ Samostatný experiment pro VO5: sweep přes 50, 100, 250, 500, 1000, 2000 a 4000
 prvků s hledáním bodu, kde medián klesne pod práh odvozený z rozpočtu zařízení.
 Menší podmnožina technik, jinak počet běhů naroste nesmyslně.
 
-Vstupní bod react.html pro srovnání vanilla Motion proti React Motion. Vyjde
-z něj čistá režie frameworku.
+Vstupní bod react.html je hotový. Vystavuje týž kontrakt jako bench.html, takže
+jej nástroj měří stejným postupem, a scénu staví ze stejného seedu; ověřeno, že
+rozvržení obou variant je shodné až na jednotky pixelů a barvy souhlasí. Rozdíl
+proti vanilla adaptéru Motion je tím čistou režií frameworku.
 
 Zvláštní režim je hotový: scroll-driven animace, View Transitions API a Lottie.
 Do hlavní statistiky nevstupují a každá má vlastní proceduru i vlastní veličiny,
