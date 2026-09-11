@@ -346,6 +346,27 @@ hlavní matice: dobou přípravy přechodu, celkovou délkou přechodu, počtem 
 během něj a nejdelším snímkem. Sama nestabilita při vyšších počtech je výsledkem,
 nikoli překážkou měření.
 
+## Lottie
+
+Nástroj přehrává předem připravený dokument a vykresluje jej do vlastní struktury,
+čímž porušuje pravidlo, že adaptér nesmí sahat na scénu. Prvky postavené
+generátorem se proto skryjí a přehrávač vedle nich vykreslí vlastní obraz. Právě
+proto techniku nelze porovnávat prvek po prvku s ostatními a měří se odděleně.
+
+Dokument se negeneruje v grafickém programu, ale ze stejné specifikace, jakou
+dostávají ostatní adaptéry. Pohyb je tím shodný z podstaty, nikoli od oka; liší
+se pouze to, kdo jej vykresluje. Použit je vykreslovač SVG.
+
+Ověřeno, že trajektorie odpovídá specifikaci. Vzorky polohy během běhu sedí na
+předepsanou dráhu s konstantním zpožděním 114 ms, po jehož započtení klesne
+odchylka na 1,3 pixelu. Zpoždění je řádově vyšší než u technik v hlavní matici,
+kde se pohybovalo mezi jednou a dvaceti milisekundami, a je vlastností
+přehrávače.
+
+Objem knihovny je 309 kB, tedy zhruba čtyřnásobek GSAP. U techniky, jejíž
+předností má být malý a na rozlišení nezávislý výstup, patří tento údaj do
+výsledků.
+
 ## Skriptovaný posun stránky
 
 Scéna parallax vyžaduje posun stránky. Ten se syntetizuje protokolem

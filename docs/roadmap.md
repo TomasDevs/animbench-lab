@@ -66,8 +66,9 @@ Menší podmnožina technik, jinak počet běhů naroste nesmyslně.
 Vstupní bod react.html pro srovnání vanilla Motion proti React Motion. Vyjde
 z něj čistá režie frameworku.
 
-Zvláštní režim s vlastní procedurou: scroll-driven animace, View Transitions API
-a Lottie. Do hlavní statistiky nevstupují.
+Zvláštní režim je hotový: scroll-driven animace, View Transitions API a Lottie.
+Do hlavní statistiky nevstupují a každá má vlastní proceduru i vlastní veličiny,
+popsané v docs/measurement-protocol.md.
 
 Srovnávací tabulka pro VO6. Neměří se, hodnotí se: zda technika respektuje
 prefers-reduced-motion sama od sebe, jak nákladné je ruční ošetření a zda jde

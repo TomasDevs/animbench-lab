@@ -9,6 +9,7 @@ const loaders: Record<string, () => Promise<AdapterConstructor>> = {
   'css-transition': () => import('./css-transition.ts').then((m) => m.CssTransitionAdapter),
   'css-keyframes': () => import('./css-keyframes.ts').then((m) => m.CssKeyframesAdapter),
   gsap: () => import('./gsap.ts').then((m) => m.GsapAdapter),
+  lottie: () => import('./lottie.ts').then((m) => m.LottieAdapter),
   motion: () => import('./motion.ts').then((m) => m.MotionAdapter),
   'scroll-driven': () => import('./scroll-driven.ts').then((m) => m.ScrollDrivenAdapter),
   'view-transition': () => import('./view-transition.ts').then((m) => m.ViewTransitionAdapter),
@@ -25,7 +26,11 @@ export const REFERENCE_ADAPTER_ID = 'raf'
  * so the reference cannot produce the same trajectory on the same scene and
  * trajectory equivalence is not defined for them.
  */
-export const SEPARATE_REGIME_IDS: readonly string[] = ['scroll-driven', 'view-transition']
+export const SEPARATE_REGIME_IDS: readonly string[] = [
+  'scroll-driven',
+  'view-transition',
+  'lottie',
+]
 
 export async function loadAdapter(id: string): Promise<AdapterConstructor> {
   const loader = loaders[id]
