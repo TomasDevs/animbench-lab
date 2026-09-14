@@ -56,6 +56,14 @@ function applyTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme
 }
 
+/** Sun for switching to light, moon for switching to dark. */
+const THEME_ICON: Record<Theme, string> = {
+  light:
+    '<circle cx="8" cy="8" r="3.25"/>' +
+    '<path d="M8 1v1.5M8 13.5V15M15 8h-1.5M2.5 8H1M12.95 3.05l-1.06 1.06M4.11 11.89l-1.06 1.06M12.95 12.95l-1.06-1.06M4.11 4.11L3.05 3.05"/>',
+  dark: '<path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.8 5.8 0 1 0 7.1 7.1z"/>',
+}
+
 function themeToggle(current: Theme): HTMLAnchorElement {
   const next: Theme = current === 'dark' ? 'light' : 'dark'
   const params = new URLSearchParams(window.location.search)
@@ -64,7 +72,11 @@ function themeToggle(current: Theme): HTMLAnchorElement {
   const toggle = document.createElement('a')
   toggle.className = 'theme-toggle'
   toggle.href = `${window.location.pathname}?${params.toString()}`
-  toggle.textContent = next === 'light' ? 'Light' : 'Dark'
+  toggle.innerHTML =
+    `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" ` +
+    `fill="none" stroke="currentColor" stroke-width="1.25" ` +
+    `stroke-linecap="round" stroke-linejoin="round">${THEME_ICON[next]}</svg>`
+  toggle.title = `Switch to ${next} theme`
   toggle.setAttribute('aria-label', `Switch to ${next} theme`)
   // Swap without a reload; the href keeps it shareable and works without JS.
   toggle.addEventListener('click', (event) => {
