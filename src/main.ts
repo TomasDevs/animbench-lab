@@ -67,11 +67,14 @@ const THEME_ICON: Record<Theme, string> = {
 function themeToggle(current: Theme): HTMLAnchorElement {
   const next: Theme = current === 'dark' ? 'light' : 'dark'
   const params = new URLSearchParams(window.location.search)
-  params.set('theme', next)
+  // Dark is the default, so only the departure from it needs recording.
+  if (next === 'light') params.set('theme', 'light')
+  else params.delete('theme')
 
+  const query = params.toString()
   const toggle = document.createElement('a')
   toggle.className = 'theme-toggle'
-  toggle.href = `${window.location.pathname}?${params.toString()}`
+  toggle.href = query ? `${window.location.pathname}?${query}` : window.location.pathname
   toggle.innerHTML =
     `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" ` +
     `fill="none" stroke="currentColor" stroke-width="1.25" ` +
