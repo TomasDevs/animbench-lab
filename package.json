@@ -2,6 +2,12 @@
   "name": "animbench-lab",
   "private": true,
   "version": "0.0.0",
+  "description": "Demo app with animation scenes for benchmarking web animation techniques",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TomasDevs/animbench-lab.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
