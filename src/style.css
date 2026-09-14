@@ -1,60 +1,270 @@
+/* Landing page only. The measurement page carries its own inline styles so it
+   issues no extra request. */
+
 :root {
-  font-family: system-ui, sans-serif;
-  line-height: 1.5;
-  color: #1a1a1a;
+  --ink: #16161a;
+  --ink-muted: #6b6b73;
+  --rule: #e6e6e9;
+  --accent: #2f3aa3;
+  --surface: #fff;
+  --surface-hover: #f6f6f8;
+
+  --step: 1.5rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
+  margin: 0 auto;
+  padding: calc(var(--step) * 3) var(--step) calc(var(--step) * 4);
+  max-width: 46rem;
+  color: var(--ink);
+  background: var(--surface);
+  font: 400 15px/1.6 ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'tnum';
+}
+
+h1,
+h2 {
+  font-weight: 550;
+  letter-spacing: -0.014em;
   margin: 0;
-  padding: 2rem;
-  max-width: 60rem;
 }
 
 h1 {
-  font-size: 1.4rem;
-  margin: 0 0 0.25rem;
+  font-size: 1.0625rem;
 }
 
 h2 {
-  font-size: 1rem;
-  margin: 2rem 0 0.5rem;
+  font-size: 0.9375rem;
 }
 
 p {
-  margin: 0 0 0.75rem;
-  max-width: 70ch;
+  margin: 0;
 }
 
-.note {
-  color: #555;
-  font-size: 0.875rem;
+.muted {
+  color: var(--ink-muted);
 }
 
-table {
-  border-collapse: collapse;
-  font-variant-numeric: tabular-nums;
+/* Masthead ---------------------------------------------------------------- */
+
+.masthead {
+  margin-bottom: calc(var(--step) * 2.5);
 }
 
-th,
-td {
-  padding: 0.3rem 0.9rem;
-  border-bottom: 1px solid #e2e2e2;
-  text-align: right;
+.masthead__row {
+  display: flex;
+  gap: 1rem;
+  align-items: baseline;
+  justify-content: space-between;
 }
 
-th:first-child,
-td:first-child {
-  text-align: left;
+.theme-toggle {
+  flex-shrink: 0;
+  padding: 0.1875rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: color 120ms ease, border-color 120ms ease;
 }
 
-th {
-  font-weight: 600;
-  color: #555;
+.theme-toggle:hover {
+  border-color: var(--ink-muted);
+  color: var(--ink);
 }
 
-code {
-  font-size: 0.9em;
-  background: #f2f2f2;
-  padding: 0.1em 0.3em;
-  border-radius: 3px;
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.lead {
+  margin-top: 0.375rem;
+  max-width: 34rem;
+  color: var(--ink-muted);
+}
+
+/* Scenes ------------------------------------------------------------------ */
+
+.scene {
+  margin-bottom: calc(var(--step) * 2);
+}
+
+.scene__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: baseline;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.scene__header h2::first-letter {
+  text-transform: uppercase;
+}
+
+.scene__header p {
+  font-size: 0.8125rem;
+}
+
+.group + .group {
+  margin-top: 1.25rem;
+}
+
+.group__label {
+  padding-top: 0.875rem;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Rows -------------------------------------------------------------------- */
+
+.row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.row__runs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.25rem;
+}
+
+/* A run link reads as a number first; the affordance appears on approach. */
+.run {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.run:hover {
+  border-color: var(--rule);
+  background: var(--surface-hover);
+}
+
+.run:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.run--unavailable {
+  color: var(--ink-muted);
+  opacity: 0.45;
+  text-decoration: line-through;
+  cursor: default;
+}
+
+/* Tools ------------------------------------------------------------------- */
+
+.tools {
+  margin-top: calc(var(--step) * 2.5);
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.tools__list {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+}
+
+.tool {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.625rem 0.75rem;
+  margin: 0 -0.75rem;
+  border-radius: 5px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 120ms ease;
+}
+
+.tool:hover {
+  background: var(--surface-hover);
+}
+
+.tool:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tool__name {
+  color: var(--accent);
+}
+
+.tool .muted {
+  font-size: 0.8125rem;
+}
+
+/* Footnote ---------------------------------------------------------------- */
+
+.footnote {
+  margin-top: calc(var(--step) * 2);
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  max-width: 38rem;
+  color: var(--ink-muted);
+  font-size: 0.8125rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark is the default; light is opt-in through the toggle. */
+:root,
+:root[data-theme='dark'] {
+  /* Tells the browser to draw scrollbars and form controls to match. */
+  color-scheme: dark;
+  --ink: #ececef;
+  --ink-muted: #97979f;
+  --rule: #2a2a30;
+  --accent: #a9b4ff;
+  --surface: #131316;
+  --surface-hover: #1c1c21;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --ink: #16161a;
+  --ink-muted: #6b6b73;
+  --rule: #e6e6e9;
+  --accent: #2f3aa3;
+  --surface: #fff;
+  --surface-hover: #f6f6f8;
 }

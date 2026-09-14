@@ -1,20 +1,26 @@
 import './style.css'
-import { allAdapterMeta } from './adapters/index.ts'
+import { allAdapterMeta, MAX_COMPLEXITY, SEPARATE_REGIME_IDS } from './adapters/index.ts'
 import { availableScenes } from './scenes/index.ts'
 import { buildUrl } from './bench/params.ts'
+import type { AdapterMeta } from './types/adapter.ts'
 import type { SceneId } from './types/scene.ts'
 
 /**
  * Landing page. Never measured: it exists so a human can reach the measurement
  * page without hand-writing URL parameters.
  *
- * Links are built from the adapter and scene registries rather than hardcoded,
- * so a technique that is not implemented yet cannot be linked to.
+ * Every link is built from the adapter registry and filtered by what the
+ * technique actually supports, so the page cannot offer a run that fails.
  */
 
-const COMPLEXITY_STEPS = [100, 500, 2000, 4000]
-const BENCH_PAGE = import.meta.env.BASE_URL + 'bench.html'
-const VALIDATE_PAGE = import.meta.env.BASE_URL + 'validate.html'
+const COMPLEXITY_STEPS = [100, 500, 2000]
+const BASE = import.meta.env.BASE_URL
+
+const SCENE_NOTES: Record<SceneId, string> = {
+  grid: 'Translate and opacity, staggered by position.',
+  composite: 'Translate, scale, rotate and opacity at once.',
+  parallax: 'Layers at different speeds during scripted scrolling.',
+}
 
 function demoUrl(technique: string, scene: SceneId, complexity: number): string {
   return buildUrl(
@@ -29,84 +35,174 @@ function demoUrl(technique: string, scene: SceneId, complexity: number): string 
       mode: 'demo',
       repeat: 0,
     },
-    BENCH_PAGE,
+    BASE + 'bench.html',
   )
 }
 
-function link(href: string, text: string): HTMLAnchorElement {
-  const a = document.createElement('a')
-  a.href = href
-  a.textContent = text
-  return a
+type Theme = 'dark' | 'light'
+
+/**
+ * Theme comes from the URL, not from storage, which the project rules forbid.
+ * A link carries the choice with it and a reload keeps it, which is all this
+ * page needs.
+ */
+function readTheme(): Theme {
+  return new URLSearchParams(window.location.search).get('theme') === 'light'
+    ? 'light'
+    : 'dark'
+}
+
+function applyTheme(theme: Theme): void {
+  document.documentElement.dataset.theme = theme
+}
+
+function themeToggle(current: Theme): HTMLAnchorElement {
+  const next: Theme = current === 'dark' ? 'light' : 'dark'
+  const params = new URLSearchParams(window.location.search)
+  params.set('theme', next)
+
+  const toggle = document.createElement('a')
+  toggle.className = 'theme-toggle'
+  toggle.href = `${window.location.pathname}?${params.toString()}`
+  toggle.textContent = next === 'light' ? 'Light' : 'Dark'
+  toggle.setAttribute('aria-label', `Switch to ${next} theme`)
+  // Swap without a reload; the href keeps it shareable and works without JS.
+  toggle.addEventListener('click', (event) => {
+    event.preventDefault()
+    window.history.replaceState(null, '', toggle.href)
+    applyTheme(next)
+    render.rebuildToggle()
+  })
+  return toggle
+}
+
+function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className?: string,
+  text?: string,
+): HTMLElementTagNameMap[K] {
+  const node = document.createElement(tag)
+  if (className) node.className = className
+  if (text !== undefined) node.textContent = text
+  return node
+}
+
+/** One technique row: a name and a run link per usable complexity. */
+function techniqueRow(meta: AdapterMeta, scene: SceneId): HTMLElement {
+  const row = el('div', 'row')
+  row.append(el('span', 'row__name', meta.label))
+
+  const runs = el('div', 'row__runs')
+  const limit = MAX_COMPLEXITY[meta.id] ?? Infinity
+
+  for (const complexity of COMPLEXITY_STEPS) {
+    if (complexity > limit) {
+      // Shown rather than hidden: the gap is information about the technique.
+      const gap = el('span', 'run run--unavailable', String(complexity))
+      gap.title = `Not measurable above ${limit} elements`
+      runs.append(gap)
+      continue
+    }
+    const link = el('a', 'run', String(complexity))
+    link.href = demoUrl(meta.id, scene, complexity)
+    runs.append(link)
+  }
+
+  row.append(runs)
+  return row
+}
+
+function sceneSection(scene: SceneId, techniques: AdapterMeta[]): HTMLElement | null {
+  const supported = techniques.filter((meta) => meta.scenes.includes(scene))
+  if (supported.length === 0) return null
+
+  const section = el('section', 'scene')
+  const header = el('div', 'scene__header')
+  header.append(el('h2', undefined, scene), el('p', 'muted', SCENE_NOTES[scene]))
+  section.append(header)
+
+  const main = supported.filter((m) => !SEPARATE_REGIME_IDS.includes(m.id))
+  const separate = supported.filter((m) => SEPARATE_REGIME_IDS.includes(m.id))
+
+  if (main.length > 0) {
+    const group = el('div', 'group')
+    for (const meta of main) group.append(techniqueRow(meta, scene))
+    section.append(group)
+  }
+
+  if (separate.length > 0) {
+    const group = el('div', 'group')
+    group.append(el('p', 'group__label', 'Measured separately'))
+    for (const meta of separate) group.append(techniqueRow(meta, scene))
+    section.append(group)
+  }
+
+  return section
 }
 
 async function render(): Promise<void> {
   const app = document.querySelector<HTMLDivElement>('#app')
   if (!app) return
 
-  const techniques = await allAdapterMeta()
-  const scenes = availableScenes()
+  const techniques = (await allAdapterMeta()).sort((a, b) => a.label.localeCompare(b.label))
 
-  const heading = document.createElement('h1')
-  heading.textContent = 'animbench-lab'
+  const header = el('header', 'masthead')
+  const titleRow = el('div', 'masthead__row')
+  titleRow.append(el('h1', undefined, 'animbench-lab'), themeToggle(readTheme()))
+  header.append(
+    titleRow,
+    el(
+      'p',
+      'lead',
+      'Identical animated scenes driven by different techniques, so frame timing can be compared.',
+    ),
+  )
+  app.append(header)
 
-  const lead = document.createElement('p')
-  lead.textContent =
-    'Demo app with animation scenes for benchmarking web animation techniques.'
-
-  const note = document.createElement('p')
-  note.className = 'note'
-  note.textContent =
-    'Opening bench.html without parameters renders the scene alone, with no control panel. That is intentional: the panel would run its own frame counter and pollute the measurement, so it only appears with mode=demo. The links below open demo mode.'
-
-  app.append(heading, lead, note)
-
-  for (const scene of scenes) {
-    const section = document.createElement('section')
-    const title = document.createElement('h2')
-    title.textContent = `Scene: ${scene}`
-    section.append(title)
-
-    const table = document.createElement('table')
-    const head = document.createElement('tr')
-    head.append(cell('th', 'technique'))
-    for (const n of COMPLEXITY_STEPS) head.append(cell('th', String(n)))
-    table.append(head)
-
-    for (const technique of techniques) {
-      const row = document.createElement('tr')
-      row.append(cell('td', technique.label))
-      for (const n of COMPLEXITY_STEPS) {
-        const td = document.createElement('td')
-        td.append(link(demoUrl(technique.id, scene, n), `run`))
-        row.append(td)
-      }
-      table.append(row)
-    }
-    section.append(table)
-    app.append(section)
+  for (const scene of availableScenes()) {
+    const section = sceneSection(scene, techniques)
+    if (section) app.append(section)
   }
 
-  const tools = document.createElement('section')
-  const toolsTitle = document.createElement('h2')
-  toolsTitle.textContent = 'Equivalence check'
-  const toolsText = document.createElement('p')
-  const code = document.createElement('code')
-  code.textContent = 'requestAnimationFrame'
-  toolsText.append(
-    'Every technique is compared against the ',
-    code,
-    ' reference before any measurement is trusted. ',
-    link(VALIDATE_PAGE, 'Run the check'),
+  const tools = el('section', 'tools')
+  tools.append(el('h2', undefined, 'Tools'))
+
+  const list = el('div', 'tools__list')
+
+  const validate = el('a', 'tool')
+  validate.href = BASE + 'validate.html'
+  validate.append(
+    el('span', 'tool__name', 'Equivalence check'),
+    el('span', 'muted', 'Every technique against the requestAnimationFrame reference.'),
   )
-  tools.append(toolsTitle, toolsText)
+
+  const react = el('a', 'tool')
+  react.href = `${BASE}react.html?complexity=500&seed=42&window=10000&mode=demo`
+  react.append(
+    el('span', 'tool__name', 'React Motion'),
+    el('span', 'muted', 'The same scene through motion/react, to isolate framework overhead.'),
+  )
+
+  list.append(validate, react)
+  tools.append(list)
   app.append(tools)
+
+  const footer = el('footer', 'footnote')
+  footer.append(
+    el(
+      'p',
+      undefined,
+      'Links open demo mode, which adds a control panel and a live frame rate. Measurement runs use mode=bench, where the panel does not exist: its own frame counter would pollute the result.',
+    ),
+  )
+  app.append(footer)
 }
 
-function cell(tag: 'th' | 'td', text: string): HTMLElement {
-  const el = document.createElement(tag)
-  el.textContent = text
-  return el
+/** Replaces the toggle in place after a theme swap. */
+render.rebuildToggle = (): void => {
+  const existing = document.querySelector('.theme-toggle')
+  existing?.replaceWith(themeToggle(readTheme()))
 }
 
+applyTheme(readTheme())
 void render()

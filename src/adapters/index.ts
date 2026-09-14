@@ -1,4 +1,4 @@
-import type { AdapterConstructor } from '../types/adapter.ts'
+import type { AdapterConstructor, AdapterMeta } from '../types/adapter.ts'
 
 /**
  * Adapters are loaded with dynamic import so that a run never downloads a
@@ -26,6 +26,16 @@ export const REFERENCE_ADAPTER_ID = 'raf'
  * so the reference cannot produce the same trajectory on the same scene and
  * trajectory equivalence is not defined for them.
  */
+/**
+ * Highest element count a technique produces usable data at.
+ *
+ * View Transitions needs one snapshot per element, so beyond a couple hundred
+ * the page effectively stalls: measured 482 ms per frame at 500 elements.
+ */
+export const MAX_COMPLEXITY: Readonly<Record<string, number>> = {
+  'view-transition': 200,
+}
+
 export const SEPARATE_REGIME_IDS: readonly string[] = [
   'scroll-driven',
   'view-transition',
@@ -49,12 +59,6 @@ export function availableAdapters(): string[] {
  * technique selector; never called in bench mode, since it would download every
  * adapter and its library.
  */
-export async function allAdapterMeta(): Promise<{ id: string; label: string }[]> {
-  const entries = await Promise.all(
-    Object.keys(loaders).map(async (id) => {
-      const ctor = await loadAdapter(id)
-      return { id, label: ctor.meta.label }
-    }),
-  )
-  return entries
+export async function allAdapterMeta(): Promise<AdapterMeta[]> {
+  return Promise.all(Object.keys(loaders).map(async (id) => (await loadAdapter(id)).meta))
 }
