@@ -394,6 +394,40 @@ vlastnostmi. Napsat ji jako volání vanilla rozhraní by srovnání zbavilo smy
 protože právě způsob použití je tím, co se porovnává. Transformace se přesto
 zapisuje jediným řetězcem, aby zůstalo zachováno pořadí funkcí.
 
+## Ověření adaptéru pro CSS přechody
+
+Měření ukázalo, že kaskádové přechody při dvou tisících prvcích pravidelně
+vynechávají každý druhý snímek, zatímco ostatní techniky rozpočet drží. Protože
+by takové zjištění mohlo být artefaktem implementace adaptéru, bylo ověřeno, zda
+adaptér nepřenastavuje cílovou hodnotu opakovaně.
+
+Sledování zápisů do atributu style ukázalo pět zápisů na prvek za celý běh:
+čtyři odpovídají segmentům mezi klíčovými snímky a pátý je zmrazení polohy na
+konci. Adaptér tedy hodnotu nepřenastavuje a přechod nerestartuje.
+
+Zbývala možnost, že půlení způsobuje samotný počet časovačů, kterých je při dvou
+tisících prvcích osm tisíc. Vyloučeno dvěma doplňkovými měřeními:
+
+| Technika | Prvků | Časovačů za běhu | Podíl zdvojených rozestupů |
+|---|------:|-----------------:|---------------------------:|
+| CSS přechody | 100 | 400 | 0 % |
+| CSS přechody | 500 | 2000 | 0 % |
+| CSS přechody | 2000 | 8000 | 71 % |
+| CSS klíčové snímky | 2000 | 0 | 3,7 % |
+| Motion | 2000 | 0, zápis stylu každý snímek | 3,0 % |
+| Web Animations API | 2000 | 0 | 0 % |
+
+Rozhodující je porovnání s klíčovými snímky: tatáž scéna, tentýž počet prvků
+a tentýž vykreslovací mechanismus kaskádových stylů, ale bez jediného časovače
+během běhu. Půlení kleslo z 71 na necelá 4 procenta.
+
+Knihovna Motion navíc zapisuje styl každého z dvou tisíc prvků v každém snímku,
+tedy nesrovnatelně častěji než osm tisíc časovačů za celý běh, a půlí pouze
+3 procenta.
+
+Půlení je proto vlastností kaskádových přechodů při vysokém počtu současně
+běžících přechodů, nikoli artefaktem adaptéru ani důsledkem plánování časovačů.
+
 ## Omezení, která patří do metodiky
 
 - Měření je vázané na jádro Chromium. Ve Firefoxu a Safari lze doplňkově změřit
