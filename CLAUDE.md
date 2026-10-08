@@ -28,12 +28,19 @@ running on the main thread pollutes the measurement.
 
 index.html      landing page for humans, never measured
 bench.html      measurement page, driven by URL parameters
-react.html      separate entry point for the React Motion variant (added later)
+react.html      React Motion variant, same contract as bench.html
+validate.html   trajectory equivalence check against the reference
 
 src/adapters/   one file per animation technique
-src/scenes/     deterministic scene generators
-src/probe/      frame timestamp collector
+src/scenes/     deterministic scene generators and animation specs
+src/probe/      frame timestamp collector, idle baseline, steady-state window
+src/bench/      bench.html entry, URL parameters, demo panel
+src/validate/   trajectory sampling and comparison
+src/react/      react.html entry
 src/types/      shared type definitions
+
+Measurement runs are served from `pnpm preview`, never from the dev server: the
+development client is another script on the main thread.
 
 ## AnimationSpec
 
@@ -75,6 +82,10 @@ Every adapter implements:
 
   static meta: { id: string, label: string, scenes: SceneId[] }
 
+A technique lists only the scenes it can animate correctly. Separate-regime
+techniques are listed in SEPARATE_REGIME_IDS and are excluded from validation;
+per-technique complexity caps live in MAX_COMPLEXITY.
+
 AdapterContext provides the already built element list and the AnimationSpec.
 Adapters are loaded with dynamic import so that unused libraries are never
 downloaded.
@@ -99,8 +110,12 @@ a rule, it does not belong in the main matrix.
 ## Scenes
 
 grid       elements in a grid, translate and opacity, staggered
-parallax   several layers moving at different speeds during scripted scrolling
 composite  translate, scale, rotate and opacity applied together
+parallax   layers at different speeds; the scene builds its own scroller and
+           exposes it as the named timeline --animbench-scroll
+
+composite is the only scene where scale and rotate are not neutral, so it is
+the one that exposes a technique reordering transform functions.
 
 Scenes are generated deterministically from a seed so that the same seed always
 produces the same layout. Use a seeded PRNG, not Math.random.
@@ -111,8 +126,10 @@ technique    adapter id
 scene        grid | parallax | composite
 complexity   number of elements
 seed         integer
-duration     ms
-mode         bench | demo
+window       steady-state window in ms; duration is derived from it as
+             window + stagger * (complexity - 1)
+duration     ms, used only when window is absent
+mode         bench | demo (anything else falls back to bench)
 repeat       run index, for logging only
 
 ## Probe contract
@@ -124,8 +141,21 @@ very thread being measured.
 The page exposes:
 
   window.__benchReady   true once the scene is built and the adapter initialised
+  window.__benchStart   function the tool calls to start the run; the returned
+                        promise is ignored, so __benchDone must not be set before
+                        __benchResult is complete
   window.__benchResult  raw timestamps and run metadata after the run ends
-  window.__benchDone    true once the result is available
+  window.__benchDone    true once the result is available or the run failed
+  window.__benchError   { message, stack? } instead of a result on failure
+
+The baseline is measured before the run. frameIntervalMs and refreshRateHz are
+both derived from the snapped refresh rate so they cannot disagree; the raw rate
+is kept as measuredRefreshHz. The tool groups results by URL parameters, not by
+meta; meta repeats them as a cross-check.
+
+meta carries steadyStateFromMs and steadyStateToMs, in the same clock as the
+timestamps, marking the stretch where every element is animating. Metrics are
+computed over that window only. A run with overflowed set is discarded.
 
 In demo mode a control panel with technique, scene and complexity selectors is
 rendered along with a live frame rate readout. The panel must not exist in
@@ -133,18 +163,25 @@ bench mode.
 
 ## Techniques
 
-Main matrix: CSS transitions, CSS keyframes, scroll-driven, requestAnimationFrame,
-Web Animations API, GSAP, Motion (vanilla API).
+Main matrix, on grid and composite: requestAnimationFrame (reference), CSS
+transitions, CSS keyframes, Web Animations API, GSAP, Motion (vanilla API).
 
-Separate regime: View Transitions API and Lottie. Both have a different nature
-and are measured with a different procedure.
+Separate regime, own procedure, not validated against the reference:
+- scroll-driven, parallax only: progress comes from the scroller, and the
+  time-driven techniques cannot produce parallax, so there is no reference
+- View Transitions API: a one-shot transition, capped at 200 elements
+- Lottie: plays a document generated from the same spec, renders its own DOM
+
+GSAP and Motion rewrite transform strings on their own. Their adapters tween a
+plain value and write the transform themselves to keep the function order.
 
 Motion is used through its vanilla animate() API, not through motion/react.
 
 ## What not to do
 
 Do not add shadows, filters or blur to scene elements.
-Do not load web fonts on bench.html.
+Do not load web fonts, favicons or any other extra resource on bench.html or
+react.html; both are measured.
 Do not add a header, navigation or any content outside the scene on bench.html.
 Do not use localStorage or any browser storage.
 Do not aggregate measurements inside the page.
