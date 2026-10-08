@@ -481,9 +481,46 @@ U dvojice s úplným oddělením běhů (Cliffovo delta = 1) vyšel p = 0,052, p
 test p = 0,0026. Friedmanův test pro závislé
 vzorky se na hlavní matici nepoužívá.
 
+Techniky na stropu displeje dávají mnoho shodných hodnot, které přesné rozdělení
+Mannova–Whitneyho testu nepřipouští. Používá se proto u všech dvojic asymptotická
+varianta s korekcí na shody a na spojitost, nastavená výslovně. Nejmenší
+dosažitelné p při deseti bězích a úplném oddělení je přibližně 1,8·10⁻⁴.
+
+Holmova korekce se počítá přes patnáct dvojic jedné kombinace scény, složitosti
+a metriky. Pro kontrolu citlivosti se uvádí i korekce přes všechny dvojice
+analýzy najednou.
+
+Nevýznamný rozdíl neznamená, že techniky jsou rovnocenné. Pro tvrzení
+o rovnocennosti se u každé dvojice určí Hodgesův–Lehmannův odhad posunu
+s intervalem spolehlivosti a dvojice se považuje za rovnocennou, pokud 90%
+interval leží uvnitř předem zvolené meze, což odpovídá dvěma jednostranným
+testům na hladině 0,05. Mez musí být stanovena před závěrečným měřením;
+předběžně 0,02 podílu dosažené a dosažitelné frekvence, tedy zhruba 1,2 snímku
+za sekundu při 60 Hz.
+
 Neparametrické testy jsou zvolené předem. Při deseti bězích na skupinu má test
 normality malou sílu a rozdělení techniky, která vynechává snímky, je
 dvouvrcholové. Test normality lze spustit, rozhodnutí se o něj ale neopírá.
+
+## Měření na telefonech se systémem Android
+
+Ověřeno na emulátoru s prohlížečem Chrome 133. Experimentální rozhraní
+Playwrightu pro Android na běžném telefonu nefunguje, nástroj se proto připojuje
+stejnou cestou jako chrome://inspect. Aplikaci telefon vidí přes adb reverse na
+adrese localhost:4173, takže se měří stejné sestavení jako na počítači. Velikost
+okna nastavit nelze; měří se na skutečné obrazovce a její rozměry se zapisují.
+
+| Údaj | Android |
+|---|---|
+| hlavní vlákno (Performance.getMetrics) | funguje |
+| CPU procesu vykreslování a grafické karty (SystemInfo.getProcessInfo) | nefunguje, izolované procesy hlásí vždy nulu |
+| stav akcelerace (SystemInfo.getInfo) | funguje |
+| stránka chrome://gpu | nefunguje, neotevře se |
+
+Kontrola akcelerace proto všude používá SystemInfo.getInfo a ke každému běhu se
+zapisuje, které údaje byly dostupné. Nedostupný údaj se v datech objeví jako
+chybějící hodnota, nikoli jako nula. Na telefonech tak VO1 pokrývá jen hlavní
+vlákno, nikoli procesy vykreslování a grafické karty.
 
 ## Omezení, která patří do metodiky
 

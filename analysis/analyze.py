@@ -41,6 +41,15 @@ OVER_BUDGET_FACTOR = 1.5
 # median jumps between them from run to run.
 TESTED_METRICS = ("refresh_ratio", "over_budget_ratio", "p1_fps")
 
+# Equivalence margins for the two one-sided tests. A difference smaller than the
+# margin is treated as practically irrelevant. PROVISIONAL: the margin is a
+# methodological decision and has to be fixed before the final measurement, not
+# fitted to its results. 0.02 of refresh ratio is about 1.2 fps at 60 Hz.
+EQUIVALENCE_MARGIN: dict[str, float] = {
+    "refresh_ratio": 0.02,
+    "over_budget_ratio": 0.02,
+}
+
 
 @dataclass
 class Run:
@@ -125,22 +134,34 @@ def holm(p_values: list[float]) -> list[float]:
     return adjusted.tolist()
 
 
-def pairwise_mann_whitney(groups: dict[str, np.ndarray]) -> list[tuple[str, str, float, float]]:
-    """Two-sided Mann-Whitney U test for every pair of groups.
+def mann_whitney(x: np.ndarray, y: np.ndarray) -> tuple[float, float]:
+    """Two-sided Mann-Whitney U test, (U, p).
 
-    Each pair is ranked on its own, so groups tied on the display ceiling do not
-    dilute the comparison between the two that differ. Returns (a, b, U, p) with
-    p unadjusted.
+    Techniques on the display ceiling produce many tied values, and the exact
+    distribution assumes none. The asymptotic method with tie correction and
+    continuity correction is therefore used throughout, stated explicitly so it
+    does not switch silently between exact and asymptotic per pair.
     """
-    results = []
-    for a, b in combinations(groups, 2):
-        x, y = groups[a], groups[b]
-        if np.ptp(np.concatenate([x, y])) == 0:
-            results.append((a, b, float(x.size * y.size / 2), 1.0))
-            continue
-        u, p = stats.mannwhitneyu(x, y, alternative="two-sided")
-        results.append((a, b, float(u), float(p)))
-    return results
+    if np.ptp(np.concatenate([x, y])) == 0:
+        return float(x.size * y.size / 2), 1.0
+    u, p = stats.mannwhitneyu(x, y, alternative="two-sided",
+                              method="asymptotic", use_continuity=True)
+    return float(u), float(p)
+
+
+def hodges_lehmann(x: np.ndarray, y: np.ndarray, confidence: float) -> tuple[float, float, float]:
+    """Shift estimate of x minus y with its distribution-free confidence interval.
+
+    The estimate is the median of all pairwise differences; the interval takes
+    the order statistics of those differences that correspond to the Mann-Whitney
+    critical value.
+    """
+    differences = np.sort((x[:, None] - y[None, :]).ravel())
+    m, n = x.size, y.size
+    z = stats.norm.ppf(1 - (1 - confidence) / 2)
+    k = int(np.floor(m * n / 2 - z * np.sqrt(m * n * (m + n + 1) / 12)))
+    k = max(k, 0)
+    return float(np.median(differences)), float(differences[k]), float(differences[-k - 1])
 
 
 def cliffs_delta(a: np.ndarray, b: np.ndarray) -> float:
@@ -172,6 +193,13 @@ def describe(runs: list[Run]) -> list[dict]:
 
 
 def compare(runs: list[Run]) -> tuple[list[dict], list[dict]]:
+    """Omnibus test per cell, then every pair in every cell.
+
+    Pairs are computed for all cells, not only where the omnibus test was
+    significant, because the equivalence assessment needs them everywhere. A
+    pair counts as different only when both the omnibus test and its own
+    Holm-adjusted test are significant.
+    """
     omnibus, pairwise = [], []
     cells = sorted({(r.scene, r.complexity) for r in runs})
 
@@ -190,27 +218,44 @@ def compare(runs: list[Run]) -> tuple[list[dict], list[dict]]:
             # Kruskal-Wallis is undefined when every value is identical, which
             # happens when all techniques sit on the display ceiling.
             if np.ptp(pooled) == 0:
-                omnibus.append({"scene": scene, "complexity": complexity, "metric": metric,
-                                "H": 0.0, "p": 1.0, "epsilon_squared": 0.0, "n": pooled.size,
-                                "note": "all values identical"})
-                continue
-
-            h, p = stats.kruskal(*groups.values())
+                h, p, note = 0.0, 1.0, "all values identical"
+            else:
+                h, p = (float(v) for v in stats.kruskal(*groups.values()))
+                note = ""
             omnibus.append({"scene": scene, "complexity": complexity, "metric": metric,
-                            "H": float(h), "p": float(p),
-                            "epsilon_squared": epsilon_squared(float(h), pooled.size),
-                            "n": pooled.size, "note": ""})
+                            "H": h, "p": p,
+                            "epsilon_squared": epsilon_squared(h, pooled.size),
+                            "n": pooled.size, "note": note})
 
-            if p >= ALPHA:
-                continue
-            # Holm runs over the pairs of one scene, complexity and metric.
-            pairs = pairwise_mann_whitney(groups)
-            adjusted = holm([pp for *_, pp in pairs])
-            for (a, b, u, raw), p_adj in zip(pairs, adjusted):
-                pairwise.append({"scene": scene, "complexity": complexity, "metric": metric,
-                                 "a": a, "b": b, "U": u, "p_raw": raw, "p_holm": p_adj,
-                                 "significant": p_adj < ALPHA,
-                                 "cliffs_delta": cliffs_delta(groups[a], groups[b])})
+            # The Holm family is the pairs of one scene, complexity and metric.
+            rows = []
+            for a, b in combinations(groups, 2):
+                x, y = groups[a], groups[b]
+                u, raw = mann_whitney(x, y)
+                shift, lo95, hi95 = hodges_lehmann(x, y, 0.95)
+                _, lo90, hi90 = hodges_lehmann(x, y, 0.90)
+                margin = EQUIVALENCE_MARGIN.get(metric)
+                rows.append({"scene": scene, "complexity": complexity, "metric": metric,
+                             "a": a, "b": b, "U": u, "p_raw": raw,
+                             "cliffs_delta": cliffs_delta(x, y),
+                             "shift": shift, "ci95_low": lo95, "ci95_high": hi95,
+                             "margin": margin if margin is not None else float("nan"),
+                             # TOST at alpha 0.05 is equivalent to the 90 %
+                             # interval lying inside the margin.
+                             "equivalent": (margin is not None and -margin < lo90 and hi90 < margin)})
+            adjusted = holm([row["p_raw"] for row in rows])
+            for row, p_adj in zip(rows, adjusted):
+                row["p_holm"] = p_adj
+                row["significant"] = p < ALPHA and p_adj < ALPHA
+            pairwise.extend(rows)
+
+    # Sensitivity check: Holm over every pair of the whole analysis at once, the
+    # strictest family. The per-cell family is the primary one.
+    adjusted_all = holm([row["p_raw"] for row in pairwise])
+    for row, p_adj in zip(pairwise, adjusted_all):
+        row["p_holm_all"] = p_adj
+        row["significant_all"] = row["significant"] and p_adj < ALPHA
+
     return omnibus, pairwise
 
 
@@ -264,7 +309,9 @@ def main() -> None:
 
     print(f"{len(runs)} valid runs from {data_dir}")
     print(f"{len(omnibus)} omnibus tests, {sum(r['p'] < ALPHA for r in omnibus)} significant")
-    print(f"{len(pairwise)} pairwise comparisons, {sum(r['significant'] for r in pairwise)} significant")
+    print(f"{len(pairwise)} pairwise comparisons, {sum(r['significant'] for r in pairwise)} significant"
+          f" ({sum(r['significant_all'] for r in pairwise)} with Holm over all pairs)")
+    print(f"{sum(r['equivalent'] for r in pairwise)} pairs equivalent within the margin")
     print(f"written to {out_dir}")
 
 

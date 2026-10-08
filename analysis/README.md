@@ -29,7 +29,25 @@ Runs are independent observations, so techniques are compared with the
 Kruskal-Wallis test per scene and complexity, followed by pairwise Mann-Whitney U
 tests with Holm correction over the pairs of each scene, complexity and metric.
 Effect sizes are epsilon squared for the omnibus test and Cliff's delta for
-pairs. Friedman's test is not used: it assumes matched blocks, and
+pairs.
+
+Ties: techniques on the display ceiling produce many identical values, which the
+exact Mann-Whitney distribution does not allow for. The asymptotic method with
+tie and continuity correction is used for every pair, set explicitly so it never
+switches between exact and asymptotic. It costs power: with ten runs per group
+and complete separation the smallest attainable p is about 1.8·10⁻⁴, against
+1.1·10⁻⁵ for the exact test.
+
+Holm family: the 15 pairs of one scene, complexity and metric. This is the
+primary analysis. As a sensitivity check, Holm is also applied over every pair
+of the analysis at once (`p_holm_all`).
+
+Equivalence: a non-significant difference is not evidence that two techniques
+are the same. For that, each pair gets the Hodges-Lehmann shift with its 95 %
+confidence interval, and is called equivalent when the 90 % interval lies
+within the margin, which is the two one-sided tests procedure at alpha 0.05.
+The margins in `EQUIVALENCE_MARGIN` are provisional and must be fixed before the
+final measurement. Friedman's test is not used: it assumes matched blocks, and
 nothing pairs repetition 3 of one technique with repetition 3 of another.
 
 Shapiro-Wilk is reported in `shapiro.csv` but nothing depends on it. With ten
@@ -47,7 +65,7 @@ other frame it jumps between 16.7 and 33.3 ms from run to run.
 | `runs.csv` | per-run metrics |
 | `descriptive.csv` | median, minimum and maximum per combination |
 | `kruskal_wallis.csv` | omnibus test per scene, complexity and metric |
-| `mann_whitney_holm.csv` | pairwise comparisons where the omnibus test was significant |
+| `mann_whitney_holm.csv` | every pair: test, effect size, shift with CI, equivalence |
 | `shapiro.csv` | normality per group, for reference only |
 
 ## Pilot findings
@@ -55,7 +73,13 @@ other frame it jumps between 16.7 and 33.3 ms from run to run.
 At 100 and 500 elements no metric differs between techniques; most values sit
 on the display ceiling. At 2000 elements every metric differs on both scenes.
 All 30 pairs involving CSS transitions are significant, and no pair among the
-other five techniques is.
+other five techniques is. With Holm over all 270 pairs, 27 remain: the three
+that drop are Motion against CSS transitions on grid, where one Motion run fell
+to 38 fps.
+
+The other five techniques are not merely not different: at 2000 elements all
+20 pairs among them are equivalent within the provisional margin of 0.02 refresh
+ratio, with shifts below 0.002.
 
 ## Why Mann-Whitney and not Dunn
 
