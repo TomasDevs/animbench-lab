@@ -32,3 +32,5 @@ data/
 # Playwright
 test-results/
 playwright-report/
+# Thesis text drafts, kept local
+docs/word/

@@ -428,6 +428,59 @@ tedy nesrovnatelně častěji než osm tisíc časovačů za celý běh, a půl�
 Půlení je proto vlastností kaskádových přechodů při vysokém počtu současně
 běžících přechodů, nikoli artefaktem adaptéru ani důsledkem plánování časovačů.
 
+## Vytížení procesoru
+
+Vytížení se odečítá z protokolu vývojářských nástrojů metodou
+Performance.getMetrics během ustáleného okna, s intervalem vzorkování 1000 ms.
+Závěrečné měření musí běžet s nastavením cpuSampleIntervalMs: 1000; bez něj
+nevzniknou data k VO1.
+
+Režie vzorkování byla ověřena. Při intervalu 500 ms se podíl dosažené
+a dosažitelné frekvence průkazně nezměnil (95% interval [−0,026; +0,013],
+p ≥ 0,5). Při intervalu 100 ms už ano, a to stejným směrem u všech metrik.
+Hustší vzorkování přesnost nezvyšuje, protože čítače jsou kumulativní, proto se
+používá 1000 ms.
+
+Předběžné výsledky ze dvou běhů na kombinaci: při dvou tisících prvcích bylo
+hlavní vlákno v ustáleném okně zaneprázdněné 81 % u CSS přechodů, 59 %
+u requestAnimationFrame a 66 % u CSS klíčových snímků. Rozdíl leží v práci mimo
+skript, styly a rozvržení (57 % proti 22–39 %), zatímco čas procesu grafické
+karty byl u všech technik shodný (52 %). Práce navíc tedy vzniká v hlavním
+vlákně, nikoli v kompozitoru. Pevná čísla přinese závěrečné měření.
+
+## Medián u techniky, která vynechává snímky
+
+U techniky, která pravidelně vynechává snímky, není medián rozestupu spolehlivý.
+Rozestupy nabývají jen dvou hodnot, 16,7 nebo 33,3 ms, a medián mezi nimi
+přeskakuje podle toho, která převáží. U CSS přechodů při dvou tisících prvcích
+kolísal mezi běhy o ±7 ms (20,2 ± 6,9 ms).
+
+Hlavními ukazateli jsou proto podíl dosažené a dosažitelné frekvence a podíl
+snímků nad rozpočtem. Medián se uvádí jen doplňkově.
+
+## Uložení dat a statistické zpracování
+
+Naměřená data se ukládají do repozitáře aplikace, nikoli do repozitáře nástroje.
+Nástroj musí zůstat univerzální, kdežto data nesou názvy technik, scén i adresu
+aplikace a k nástroji nepatří. Replikace tak má aplikaci, data i skripty na
+jednom místě.
+
+    data/pilot/   ověřovací měření s odlišnou konfigurací, bez vzorkování CPU
+    data/final/   závěrečné měření
+    analysis/     skripty statistického zpracování v Pythonu
+
+Ukládá se NDJSON se surovými razítky, agregované CSV a konfigurace běhu.
+
+Běhy jsou nezávislá pozorování: každý je samostatné načtení stránky v náhodném
+pořadí a nic je mezi technikami nepáruje. Techniky se proto porovnávají
+Kruskalovým–Wallisovým testem zvlášť pro každou kombinaci scény a složitosti,
+s Dunnovým post-hoc testem a Holmovou korekcí. Friedmanův test pro závislé
+vzorky se na hlavní matici nepoužívá.
+
+Neparametrické testy jsou zvolené předem. Při deseti bězích na skupinu má test
+normality malou sílu a rozdělení techniky, která vynechává snímky, je
+dvouvrcholové. Test normality lze spustit, rozhodnutí se o něj ale neopírá.
+
 ## Omezení, která patří do metodiky
 
 - Měření je vázané na jádro Chromium. Ve Firefoxu a Safari lze doplňkově změřit
