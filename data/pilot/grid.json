@@ -1,0 +1,22 @@
+{
+  "target": {
+    "url": "http://localhost:4173/animbench-lab/bench.html",
+    "matrix": {
+      "technique": ["raf", "css-transition", "css-keyframes", "waapi", "gsap", "motion"],
+      "scene": ["grid"],
+      "complexity": ["100", "500", "2000"],
+      "window": ["10000"],
+      "seed": ["42"],
+      "mode": ["bench"]
+    }
+  },
+  "timing": { "readyTimeoutMs": 30000, "runTimeoutMs": 300000, "cooldownMs": 15000 },
+  "batch": { "repetitions": 10, "warmupRuns": 1, "shuffle": true, "seed": 20260911 },
+  "browser": {
+    "headless": false,
+    "viewport": { "width": 1280, "height": 720 },
+    "requireHardwareAcceleration": true
+  },
+  "output": { "ndjsonPath": "results/final/grid.ndjson", "csvPath": "results/final/grid.csv" },
+  "labels": { "device": "MacBook Air M3", "display": "60Hz external 2560x1440", "scene": "grid" }
+}

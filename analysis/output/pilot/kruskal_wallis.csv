@@ -1,0 +1,19 @@
+scene,complexity,metric,H,p,epsilon_squared,n,note
+composite,100,refresh_ratio,3.44883,0.631144,0.0584548,60,
+composite,100,over_budget_ratio,0,1,0,60,all values identical
+composite,100,p1_fps,6.3502,0.273618,0.107631,60,
+composite,500,refresh_ratio,3.55734,0.61473,0.0602938,60,
+composite,500,over_budget_ratio,0,1,0,60,all values identical
+composite,500,p1_fps,5.53433,0.354196,0.0938022,60,
+composite,2000,refresh_ratio,28.8984,2.42759e-05,0.489804,60,
+composite,2000,over_budget_ratio,42.5428,4.57353e-08,0.721065,60,
+composite,2000,p1_fps,31.178,8.63899e-06,0.52844,60,
+grid,100,refresh_ratio,6.23563,0.283962,0.105689,60,
+grid,100,over_budget_ratio,5,0.41588,0.0847458,60,
+grid,100,p1_fps,3.34446,0.647042,0.0566857,60,
+grid,500,refresh_ratio,1.89437,0.863559,0.032108,60,
+grid,500,over_budget_ratio,5,0.41588,0.0847458,60,
+grid,500,p1_fps,2.77147,0.735168,0.046974,60,
+grid,2000,refresh_ratio,28.8947,2.43165e-05,0.489741,60,
+grid,2000,over_budget_ratio,31.24,8.39853e-06,0.529492,60,
+grid,2000,p1_fps,24.8003,0.000152263,0.420344,60,

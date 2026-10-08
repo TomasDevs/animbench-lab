@@ -1,0 +1,4 @@
+complexity,mode,scene,seed,technique,window,runsValid,runsDiscarded,runsWarmup,discardReasons,meanIntervalMs_mean,medianIntervalMs_mean,p95IntervalMs_mean,p99IntervalMs_mean,maxIntervalMs_max,meanFps_mean,p5Fps_mean,p1Fps_mean,framesOverBudget_mean,framesOverBudgetRatio_mean,refreshRatio_mean,budgetMs_median,refreshRateHz_median,frameCount_mean,recordedFrameCount_mean,trimmedRatio_mean,meanIntervalMs_stdDev,meanFps_min,meanFps_max
+100,bench,parallax,42,scroll-driven,20000,10,0,1,,16.6803,16.7,17.9715,18.2963,18.8,59.951,55.6743,54.6906,0,0,0.9992,16.6667,60,1139,1199,0.05,0.0008,59.9452,59.9547
+500,bench,parallax,42,scroll-driven,20000,10,0,1,,16.6834,16.7,17.6825,18.4,50.1,59.9397,56.5655,54.3602,0.1,0.0001,0.999,16.6667,60,1138.8,1199.3,0.0504,0.0093,59.8452,59.9509
+2000,bench,parallax,42,scroll-driven,20000,10,0,1,,16.6835,16.7,17.682,18.2363,34.7,59.9393,56.5829,54.8665,0.2,0.0002,0.999,16.6667,60,1138.8,1198.6,0.0499,0.0061,59.8979,59.9528

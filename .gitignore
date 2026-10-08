@@ -26,11 +26,13 @@ dist-ssr
 # Claude Code
 .claude/settings.local.json
 
-# Measurement data
-data/
 
 # Playwright
 test-results/
 playwright-report/
 # Thesis text drafts, kept local
 docs/word/
+
+# Python environment for analysis/
+analysis/.venv/
+__pycache__/
