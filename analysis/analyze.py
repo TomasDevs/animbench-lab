@@ -7,8 +7,12 @@ non-parametric tests.
 Runs are independent observations: each is its own page load in shuffled order,
 and nothing pairs repetition 3 of one technique with repetition 3 of another.
 Techniques are therefore compared with the Kruskal-Wallis test per scene and
-complexity, followed by Dunn's test with Holm correction. Friedman's test, which
-assumes matched blocks, does not apply.
+complexity, followed by pairwise Mann-Whitney U tests with Holm correction.
+Friedman's test, which assumes matched blocks, does not apply.
+
+Dunn's test was tried on the pilot and rejected: it ranks all groups together,
+and with five techniques tied near the display ceiling it missed a pair whose
+runs separated completely (Cliff's delta = 1, Holm p = 0.052).
 
 Usage:
     .venv/bin/python analyze.py ../data/pilot output/pilot
@@ -121,35 +125,21 @@ def holm(p_values: list[float]) -> list[float]:
     return adjusted.tolist()
 
 
-def dunn(groups: dict[str, np.ndarray]) -> list[tuple[str, str, float, float]]:
-    """Dunn's pairwise test on pooled ranks, with tie correction.
+def pairwise_mann_whitney(groups: dict[str, np.ndarray]) -> list[tuple[str, str, float, float]]:
+    """Two-sided Mann-Whitney U test for every pair of groups.
 
-    Returns (a, b, z, p) for every pair; p is two-sided and unadjusted.
+    Each pair is ranked on its own, so groups tied on the display ceiling do not
+    dilute the comparison between the two that differ. Returns (a, b, U, p) with
+    p unadjusted.
     """
-    labels = list(groups)
-    values = np.concatenate([groups[label] for label in labels])
-    ranks = stats.rankdata(values)
-    n = values.size
-
-    mean_rank: dict[str, float] = {}
-    offset = 0
-    for label in labels:
-        size = groups[label].size
-        mean_rank[label] = ranks[offset : offset + size].mean()
-        offset += size
-
-    _, tie_counts = np.unique(values, return_counts=True)
-    tie_term = np.sum(tie_counts**3 - tie_counts) / (12 * (n - 1))
-    variance_base = n * (n + 1) / 12 - tie_term
-
     results = []
-    for a, b in combinations(labels, 2):
-        se = np.sqrt(variance_base * (1 / groups[a].size + 1 / groups[b].size))
-        if se == 0:
-            results.append((a, b, 0.0, 1.0))
+    for a, b in combinations(groups, 2):
+        x, y = groups[a], groups[b]
+        if np.ptp(np.concatenate([x, y])) == 0:
+            results.append((a, b, float(x.size * y.size / 2), 1.0))
             continue
-        z = (mean_rank[a] - mean_rank[b]) / se
-        results.append((a, b, float(z), float(2 * stats.norm.sf(abs(z)))))
+        u, p = stats.mannwhitneyu(x, y, alternative="two-sided")
+        results.append((a, b, float(u), float(p)))
     return results
 
 
@@ -213,11 +203,12 @@ def compare(runs: list[Run]) -> tuple[list[dict], list[dict]]:
 
             if p >= ALPHA:
                 continue
-            pairs = dunn(groups)
+            # Holm runs over the pairs of one scene, complexity and metric.
+            pairs = pairwise_mann_whitney(groups)
             adjusted = holm([pp for *_, pp in pairs])
-            for (a, b, z, raw), p_adj in zip(pairs, adjusted):
+            for (a, b, u, raw), p_adj in zip(pairs, adjusted):
                 pairwise.append({"scene": scene, "complexity": complexity, "metric": metric,
-                                 "a": a, "b": b, "z": z, "p_raw": raw, "p_holm": p_adj,
+                                 "a": a, "b": b, "U": u, "p_raw": raw, "p_holm": p_adj,
                                  "significant": p_adj < ALPHA,
                                  "cliffs_delta": cliffs_delta(groups[a], groups[b])})
     return omnibus, pairwise
@@ -268,7 +259,7 @@ def main() -> None:
     write_csv(out_dir / "runs.csv", [asdict(r) for r in runs])
     write_csv(out_dir / "descriptive.csv", describe(runs))
     write_csv(out_dir / "kruskal_wallis.csv", omnibus)
-    write_csv(out_dir / "dunn_holm.csv", pairwise)
+    write_csv(out_dir / "mann_whitney_holm.csv", pairwise)
     write_csv(out_dir / "shapiro.csv", normality(runs))
 
     print(f"{len(runs)} valid runs from {data_dir}")

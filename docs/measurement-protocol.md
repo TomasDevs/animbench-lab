@@ -473,8 +473,12 @@ Ukládá se NDJSON se surovými razítky, agregované CSV a konfigurace běhu.
 
 Běhy jsou nezávislá pozorování: každý je samostatné načtení stránky v náhodném
 pořadí a nic je mezi technikami nepáruje. Techniky se proto porovnávají
-Kruskalovým–Wallisovým testem zvlášť pro každou kombinaci scény a složitosti,
-s Dunnovým post-hoc testem a Holmovou korekcí. Friedmanův test pro závislé
+Kruskalovým–Wallisovým testem zvlášť pro každou kombinaci scény a složitosti.
+Dvojice se pak porovnávají párovými Mannovými–Whitneyho testy s Holmovou
+korekcí. Dunnův test byl na pilotních datech vyzkoušen a zamítnut: řadí všechny
+skupiny společně, a když pět technik stojí u stropu displeje, ztrácí sílu.
+U dvojice s úplným oddělením běhů (Cliffovo delta = 1) vyšel p = 0,052, párový
+test p = 0,0026. Friedmanův test pro závislé
 vzorky se na hlavní matici nepoužívá.
 
 Neparametrické testy jsou zvolené předem. Při deseti bězích na skupinu má test
