@@ -1,4 +1,5 @@
 import './style.css'
+import { applyTheme, readTheme, themeToggle, withTheme } from './theme.ts'
 import { allAdapterMeta, MAX_COMPLEXITY, SEPARATE_REGIME_IDS } from './adapters/index.ts'
 import { availableScenes } from './scenes/index.ts'
 import { buildUrl } from './bench/params.ts'
@@ -37,58 +38,6 @@ function demoUrl(technique: string, scene: SceneId, complexity: number): string 
     },
     BASE + 'bench.html',
   )
-}
-
-type Theme = 'dark' | 'light'
-
-/**
- * Theme comes from the URL, not from storage, which the project rules forbid.
- * A link carries the choice with it and a reload keeps it, which is all this
- * page needs.
- */
-function readTheme(): Theme {
-  return new URLSearchParams(window.location.search).get('theme') === 'light'
-    ? 'light'
-    : 'dark'
-}
-
-function applyTheme(theme: Theme): void {
-  document.documentElement.dataset.theme = theme
-}
-
-/** Sun for switching to light, moon for switching to dark. */
-const THEME_ICON: Record<Theme, string> = {
-  light:
-    '<circle cx="8" cy="8" r="3.25"/>' +
-    '<path d="M8 1v1.5M8 13.5V15M15 8h-1.5M2.5 8H1M12.95 3.05l-1.06 1.06M4.11 11.89l-1.06 1.06M12.95 12.95l-1.06-1.06M4.11 4.11L3.05 3.05"/>',
-  dark: '<path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.8 5.8 0 1 0 7.1 7.1z"/>',
-}
-
-function themeToggle(current: Theme): HTMLAnchorElement {
-  const next: Theme = current === 'dark' ? 'light' : 'dark'
-  const params = new URLSearchParams(window.location.search)
-  // Dark is the default, so only the departure from it needs recording.
-  if (next === 'light') params.set('theme', 'light')
-  else params.delete('theme')
-
-  const query = params.toString()
-  const toggle = document.createElement('a')
-  toggle.className = 'theme-toggle'
-  toggle.href = query ? `${window.location.pathname}?${query}` : window.location.pathname
-  toggle.innerHTML =
-    `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" ` +
-    `fill="none" stroke="currentColor" stroke-width="1.25" ` +
-    `stroke-linecap="round" stroke-linejoin="round">${THEME_ICON[next]}</svg>`
-  toggle.title = `Switch to ${next} theme`
-  toggle.setAttribute('aria-label', `Switch to ${next} theme`)
-  // Swap without a reload; the href keeps it shareable and works without JS.
-  toggle.addEventListener('click', (event) => {
-    event.preventDefault()
-    window.history.replaceState(null, '', toggle.href)
-    applyTheme(next)
-    render.rebuildToggle()
-  })
-  return toggle
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -184,6 +133,13 @@ async function render(): Promise<void> {
 
   const list = el('div', 'tools__list')
 
+  const results = el('a', 'tool')
+  results.href = withTheme(BASE + 'results.html')
+  results.append(
+    el('span', 'tool__name', 'Results'),
+    el('span', 'muted', 'Frame rate per technique, scene and complexity, with test outcomes.'),
+  )
+
   const validate = el('a', 'tool')
   validate.href = BASE + 'validate.html'
   validate.append(
@@ -198,7 +154,7 @@ async function render(): Promise<void> {
     el('span', 'muted', 'The same scene through motion/react, to isolate framework overhead.'),
   )
 
-  list.append(validate, react)
+  list.append(results, validate, react)
   tools.append(list)
   app.append(tools)
 
@@ -211,12 +167,6 @@ async function render(): Promise<void> {
     ),
   )
   app.append(footer)
-}
-
-/** Replaces the toggle in place after a theme swap. */
-render.rebuildToggle = (): void => {
-  const existing = document.querySelector('.theme-toggle')
-  existing?.replaceWith(themeToggle(readTheme()))
 }
 
 applyTheme(readTheme())

@@ -13,6 +13,7 @@ export default defineConfig({
         bench: fileURLToPath(new URL('bench.html', import.meta.url)),
         validate: fileURLToPath(new URL('validate.html', import.meta.url)),
         react: fileURLToPath(new URL('react.html', import.meta.url)),
+        results: fileURLToPath(new URL('results.html', import.meta.url)),
       },
     },
   },

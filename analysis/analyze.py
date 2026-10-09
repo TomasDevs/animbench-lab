@@ -66,6 +66,8 @@ class Run:
     p1_fps: float
     max_interval_ms: float
     sd_interval_ms: float
+    # Share of intervals lasting 1, 2, 3, 4 and 5 or more frame budgets.
+    budget_buckets: tuple[float, ...]
 
 
 def window_intervals(record: dict) -> np.ndarray:
@@ -76,6 +78,19 @@ def window_intervals(record: dict) -> np.ndarray:
     end = meta.get("steadyStateToMs", record["endTime"])
     inside = timestamps[(timestamps >= start) & (timestamps <= end)]
     return np.diff(inside)
+
+
+BUCKETS = 5
+
+
+def budget_buckets(intervals: np.ndarray, budget: float) -> tuple[float, ...]:
+    """Share of intervals by how many frame budgets they took, the last bucket open.
+
+    Rounding to whole budgets is what makes regular frame dropping visible: a
+    technique that skips every other frame piles up in bucket 2.
+    """
+    counts = np.clip(np.rint(intervals / budget), 1, BUCKETS).astype(int)
+    return tuple(float(np.mean(counts == k)) for k in range(1, BUCKETS + 1))
 
 
 def run_metrics(record: dict) -> Run | None:
@@ -103,11 +118,16 @@ def run_metrics(record: dict) -> Run | None:
         p1_fps=1000.0 / np.percentile(intervals, 99),
         max_interval_ms=float(intervals.max()),
         sd_interval_ms=float(intervals.std(ddof=1)),
+        budget_buckets=budget_buckets(intervals, budget),
     )
+
+
+DATASET: dict = {}
 
 
 def load_runs(data_dir: Path) -> list[Run]:
     runs: list[Run] = []
+    DATASET.clear()
     for path in sorted(data_dir.glob("*.ndjson")):
         with path.open(encoding="utf-8") as handle:
             for line in handle:
@@ -119,7 +139,20 @@ def load_runs(data_dir: Path) -> list[Run]:
                 run = run_metrics(record)
                 if run is not None:
                     runs.append(run)
+                    remember_environment(record)
     return runs
+
+
+def remember_environment(record: dict) -> None:
+    """Collects the facts the results page shows about where the data came from."""
+    env, labels = record.get("environment", {}), record.get("labels", {})
+    DATASET.setdefault("devices", set()).add(labels.get("device", "unknown"))
+    DATASET.setdefault("displays", set()).add(labels.get("display", "unknown"))
+    DATASET.setdefault("browsers", set()).add(env.get("browser", "unknown"))
+    day = record.get("recordedAt", "")[:10]
+    if day:
+        DATASET["first_day"] = min(DATASET.get("first_day", day), day)
+        DATASET["last_day"] = max(DATASET.get("last_day", day), day)
 
 
 def holm(p_values: list[float]) -> list[float]:
@@ -279,6 +312,44 @@ def normality(runs: list[Run]) -> list[dict]:
     return rows
 
 
+def summary(data_dir: Path, runs: list[Run], omnibus: list[dict], pairwise: list[dict]) -> dict:
+    """Everything the results page needs, in one file it can import."""
+    combos = []
+    for row in describe(runs):
+        key = (row["scene"], row["complexity"], row["technique"])
+        group = [r for r in runs if (r.scene, r.complexity, r.technique) == key]
+        pairs = [p for p in pairwise
+                 if (p["scene"], p["complexity"], p["metric"]) == (key[0], key[1], "refresh_ratio")
+                 and key[2] in (p["a"], p["b"])]
+        combos.append({
+            "scene": key[0], "complexity": key[1], "technique": key[2], "runs": len(group),
+            "refreshRatio": row["refresh_ratio_median"],
+            "refreshRatioMin": row["refresh_ratio_min"],
+            "refreshRatioMax": row["refresh_ratio_max"],
+            "overBudget": row["over_budget_ratio_median"],
+            "p1Fps": row["p1_fps_median"],
+            "meanFps": row["mean_fps_median"],
+            "maxIntervalMs": row["max_interval_ms_max"],
+            "runRefreshRatios": [r.refresh_ratio for r in group],
+            "buckets": [float(np.mean([r.budget_buckets[k] for r in group])) for k in range(BUCKETS)],
+            "differsFrom": sum(p["significant"] for p in pairs),
+            "equivalentTo": sum(p["equivalent"] for p in pairs),
+            "compared": len(pairs),
+        })
+    return {
+        "dataset": data_dir.name,
+        "devices": sorted(DATASET.get("devices", [])),
+        "displays": sorted(DATASET.get("displays", [])),
+        "browsers": sorted(DATASET.get("browsers", [])),
+        "firstDay": DATASET.get("first_day", ""),
+        "lastDay": DATASET.get("last_day", ""),
+        "validRuns": len(runs),
+        "equivalenceMargin": EQUIVALENCE_MARGIN.get("refresh_ratio"),
+        "combinations": combos,
+        "omnibus": [o for o in omnibus if o["metric"] == "refresh_ratio"],
+    }
+
+
 def write_csv(path: Path, rows: list[dict]) -> None:
     if not rows:
         path.write_text("", encoding="utf-8")
@@ -301,11 +372,14 @@ def main() -> None:
         sys.exit(f"No valid runs in {data_dir}")
 
     omnibus, pairwise = compare(runs)
-    write_csv(out_dir / "runs.csv", [asdict(r) for r in runs])
+    write_csv(out_dir / "runs.csv",
+              [{k: v for k, v in asdict(r).items() if k != "budget_buckets"} for r in runs])
     write_csv(out_dir / "descriptive.csv", describe(runs))
     write_csv(out_dir / "kruskal_wallis.csv", omnibus)
     write_csv(out_dir / "mann_whitney_holm.csv", pairwise)
     write_csv(out_dir / "shapiro.csv", normality(runs))
+    (out_dir / "summary.json").write_text(
+        json.dumps(summary(data_dir, runs, omnibus, pairwise), indent=1), encoding="utf-8")
 
     print(f"{len(runs)} valid runs from {data_dir}")
     print(f"{len(omnibus)} omnibus tests, {sum(r['p'] < ALPHA for r in omnibus)} significant")

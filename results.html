@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>animbench-lab results</title>
+    <script>
+      // Set before first paint, so the page never flashes the wrong theme.
+      document.documentElement.dataset.theme =
+        new URLSearchParams(location.search).get('theme') === 'light' ? 'light' : 'dark'
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/results/main.ts"></script>
+  </body>
+</html>
