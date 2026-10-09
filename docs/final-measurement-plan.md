@@ -14,10 +14,11 @@ Stav: **návrh**. Plán se zafixuje, jakmile budou uzavřeny otevřené body ní
 
 | | Bod | Kdo | Podmínka uzavření |
 |---|---|---|---|
-| O1 | Režie vzorkování CPU při 1000 ms | animbench | viz kapitola Mez rovnocennosti |
+| O1 | Režie vzorkování CPU při 1000 ms | animbench | **změřeno 9. 10. 2026**, výsledek a jeho důsledky v kapitole Odchylky (D1–D3) |
 | O2 | Časy přechodu u View Transitions | animbench-lab | stránka zapíše do metadat okamžik připravenosti a dokončení přechodu |
 | O3 | Ustálené okno u View Transitions | animbench-lab | ověřit, že okno odpovídá průběhu přechodu, nikoli zpoždění mezi prvky |
 | O4 | Ověření ekvivalence | animbench-lab | **uzavřeno 9. 10. 2026**: všech 10 dvojic ekvivalentních; zopakovat, pokud se sestavení změní |
+| O5 | Rozhodnutí o oddělení měření CPU od měření snímků | autor | viz D3 |
 
 ## Zařízení a prostředí
 
@@ -43,6 +44,21 @@ Hlavní matice:
 | Složitost | 100, 500, 2000 prvků |
 | Šířka ustáleného okna | 10 s pro 100 prvků, 20 s pro 500 a 2000 prvků |
 | Seed | 42 |
+
+Práh počtu prvků (VO5):
+
+| | |
+|---|---|
+| Techniky | raf, css-transition, css-keyframes, waapi |
+| Scéna | grid |
+| Složitost | 50, 100, 250, 500, 800, 1200, 1500, 2000 prvků |
+| Šířka ustáleného okna | 20 s |
+
+Tři úrovně hlavní matice na určení prahu nestačí. Sweep hledá nejvyšší počet
+prvků, při kterém technika drží podíl dosažené a dosažitelné frekvence alespoň
+0,9. Menší podmnožina technik drží počet běhů v rozumných mezích: referenční
+requestAnimationFrame, technika, která v pilotu propadala, a dvě nativní
+techniky. Knihovny GSAP a Motion se v pilotu od reference nelišily.
 
 Zvláštní režim a doplňkové srovnání:
 
@@ -74,8 +90,9 @@ Odhad délky na jednom zařízení, včetně rozehřívacích běhů a prodlev:
 | View Transitions | 66 | 0,5 h |
 | Lottie | 66 | 0,7 h |
 | React Motion | 33 | 0,4 h |
+| práh počtu prvků (VO5) | 352 | 4,1 h |
 | ověření režie CPU (O1) | 44 | 0,6 h |
-| **celkem** | **638** | **6,9 h** |
+| **celkem** | **990** | **11,0 h** |
 
 Hlavní matice se může spustit samostatně jako první blok; zbytek lze měřit
 v dalších dávkách se stejnou konfigurací prostředí.
@@ -150,4 +167,32 @@ ověření režie.
 
 ## Odchylky
 
-Zatím žádné.
+**D1, 9. 10. 2026: spánek stroje během O1.** Měření běželo bez blokování
+spánku a stroj usnul mezi 8:54 a 9:31 (doloženo v `pmset -g log`). Běhy č. 28
+až 30 překročily časový limit a byly zahozeny. Běh č. 31 proběhl při probouzení,
+displej na dvě sekundy zhasl. Před dalším měřením se spánek blokuje
+(`caffeinate -dimsu`) a stav napájení se zapisuje ke každému běhu.
+
+**D2, 9. 10. 2026: pravidlo pro mez nešlo splnit.** Pravidlo „interval rozdílu
+uvnitř ±0,01" bylo stanoveno bez ohledu na šum mezi opakováními. Při směrodatné
+odchylce kolem 0,013 a deseti bězích na variantu má interval šířku přibližně
+±0,012 už bez jakékoli režie, takže u css-transition podmínka splnitelná nebyla.
+Výsledek O1:
+
+| Technika | Posun (se vzorkováním − bez) | 95% interval | Mez podle pravidla |
+|---|---:|---|---:|
+| raf | 0,000 | [−0,002; 0,000] | — |
+| css-transition | −0,008 | [−0,026; +0,005] | 0,06 |
+| css-transition bez běhu č. 31 | −0,005 | [−0,022; +0,006] | 0,05 |
+
+Bodový odhad režie je malý a odpovídá měření při 500 ms. U techniky na stropu
+displeje se neprojevil vůbec, u techniky na hranici výkonu ano. Režie tedy
+nepůsobí na všechny techniky stejně, a právě takové nerovnoměrné působení by
+zkreslilo srovnání.
+
+**D3: oddělení měření CPU od měření snímků. Čeká na rozhodnutí autora.**
+Navrženo: snímková frekvence se měří v bězích bez vzorkování CPU, vytížení CPU
+v samostatných bězích se stejnou maticí. Měřicí vrstva tak do srovnání technik
+nevstupuje vůbec a mez rovnocennosti 0,02 se zdůvodňuje vnímáním (méně než jeden
+vynechaný snímek za sekundu při 60 Hz), nikoli režií nástroje. Cena: hlavní
+matice se měří dvakrát, přibližně o 4,4 h navíc.
