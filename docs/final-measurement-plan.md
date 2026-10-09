@@ -8,17 +8,17 @@ přizpůsobena výsledkům.
 Podmínky jednoho běhu popisuje docs/measurement-protocol.md, pilotní data
 a jejich zpracování data/pilot/ a analysis/.
 
-Stav: **návrh**. Plán se zafixuje, jakmile budou uzavřeny otevřené body níže.
+Stav: **zafixováno 9. 10. 2026.** Všechny otevřené body jsou uzavřené. Další změny se zapisují pouze do kapitoly Odchylky.
 
 ## Otevřené body před zafixováním
 
 | | Bod | Kdo | Podmínka uzavření |
 |---|---|---|---|
 | O1 | Režie vzorkování CPU při 1000 ms | animbench | **změřeno 9. 10. 2026**, výsledek a jeho důsledky v kapitole Odchylky (D1–D3) |
-| O2 | Časy přechodu u View Transitions | animbench-lab | stránka zapíše do metadat okamžik připravenosti a dokončení přechodu |
-| O3 | Ustálené okno u View Transitions | animbench-lab | ověřit, že okno odpovídá průběhu přechodu, nikoli zpoždění mezi prvky |
+| O2 | Časy přechodu u View Transitions | animbench-lab | **uzavřeno 9. 10. 2026**: metadata nesou `oneShot.prepareMs` a `oneShot.playMs` |
+| O3 | Ustálené okno u View Transitions | animbench-lab | **uzavřeno 9. 10. 2026**: okno vede od připravenosti po dokončení přechodu, běh končí až s přechodem |
 | O4 | Ověření ekvivalence | animbench-lab | **uzavřeno 9. 10. 2026**: všech 10 dvojic ekvivalentních; zopakovat, pokud se sestavení změní |
-| O5 | Rozhodnutí o oddělení měření CPU od měření snímků | autor | viz D3 |
+| O5 | Rozhodnutí o oddělení měření CPU od měření snímků | autor | **uzavřeno 9. 10. 2026**: varianta 2, viz D3 |
 
 ## Zařízení a prostředí
 
@@ -65,7 +65,7 @@ Zvláštní režim a doplňkové srovnání:
 | Technika | Scény | Složitost |
 |---|---|---|
 | scroll-driven | parallax | 100, 500, 2000 |
-| view-transition | grid, composite | 50, 100, 200 |
+| view-transition | grid, composite | 50, 100, 200; `duration=1000`, bez parametru `window` |
 | lottie | grid, composite | 100, 500, 2000 |
 | react-motion (react.html) | grid | 100, 500, 2000 |
 
@@ -77,7 +77,7 @@ Zvláštní režim a doplňkové srovnání:
 | Rozehřívací běh | 1 na kombinaci, zahazuje se |
 | Pořadí | náhodné, seed dávky zapsaný v konfiguraci |
 | Prodleva mezi běhy | 15 s |
-| Vzorkování CPU | `cpuSampleIntervalMs: 1000` |
+| Vzorkování CPU | jen v samostatné dávce pro VO1, `cpuSampleIntervalMs: 1000`; dávky pro snímky bez vzorkování |
 | Časové limity | 30 s do připravenosti, 300 s na běh |
 | Výstup | `animbench-lab/data/final/` |
 
@@ -85,14 +85,15 @@ Odhad délky na jednom zařízení, včetně rozehřívacích běhů a prodlev:
 
 | Blok | Běhů | Doba |
 |---|---:|---:|
-| hlavní matice | 396 | 4,4 h |
+| hlavní matice, snímky (bez vzorkování) | 396 | 4,4 h |
+| hlavní matice, vytížení CPU (VO1) | 396 | 4,4 h |
 | scroll-driven | 33 | 0,4 h |
 | View Transitions | 66 | 0,5 h |
 | Lottie | 66 | 0,7 h |
 | React Motion | 33 | 0,4 h |
 | práh počtu prvků (VO5) | 352 | 4,1 h |
 | ověření režie CPU (O1) | 44 | 0,6 h |
-| **celkem** | **990** | **11,0 h** |
+| **celkem** | **1386** | **15,4 h** |
 
 Hlavní matice se může spustit samostatně jako první blok; zbytek lze měřit
 v dalších dávkách se stejnou konfigurací prostředí.
@@ -138,6 +139,14 @@ nerozhodnutelná, nikoli jako shodná.
 
 Shapirův–Wilkův test se uvádí, ale volba testů na něm nezávisí.
 
+View Transitions se vyhodnocují zvlášť: doba přípravy přechodu
+(`oneShot.prepareMs`), délka přechodu (`oneShot.playMs`), podíl snímků nad
+rozpočtem a nejdelší snímek během přechodu. Ustálené okno vede od připravenosti
+po dokončení přechodu, takže příprava se do snímkových metrik nezapočítává.
+
+Vytížení CPU (VO1) se vyhodnocuje z dávky se vzorkováním stejnými testy jako
+snímky. Snímkové metriky se počítají výhradně z dávek bez vzorkování.
+
 ## Mez rovnocennosti
 
 Navržená mez je **0,02 podílu dosažené a dosažitelné frekvence**, tedy přibližně
@@ -170,8 +179,9 @@ ověření režie.
 **D1, 9. 10. 2026: spánek stroje během O1.** Měření běželo bez blokování
 spánku a stroj usnul mezi 8:54 a 9:31 (doloženo v `pmset -g log`). Běhy č. 28
 až 30 překročily časový limit a byly zahozeny. Běh č. 31 proběhl při probouzení,
-displej na dvě sekundy zhasl. Před dalším měřením se spánek blokuje
-(`caffeinate -dimsu`) a stav napájení se zapisuje ke každému běhu.
+displej na dvě sekundy zhasl. Nástroj od té doby blokuje spánek
+po celou dobu dávky sám a ke každému běhu zapisuje `environment.keepAwake`
+a stav napájení před i po běhu (`environment.power`).
 
 **D2, 9. 10. 2026: pravidlo pro mez nešlo splnit.** Pravidlo „interval rozdílu
 uvnitř ±0,01" bylo stanoveno bez ohledu na šum mezi opakováními. Při směrodatné
@@ -190,9 +200,12 @@ displeje se neprojevil vůbec, u techniky na hranici výkonu ano. Režie tedy
 nepůsobí na všechny techniky stejně, a právě takové nerovnoměrné působení by
 zkreslilo srovnání.
 
-**D3: oddělení měření CPU od měření snímků. Čeká na rozhodnutí autora.**
-Navrženo: snímková frekvence se měří v bězích bez vzorkování CPU, vytížení CPU
+**D3, 9. 10. 2026: oddělení měření CPU od měření snímků. Rozhodnuto.**
+Snímková frekvence se měří v bězích bez vzorkování CPU, vytížení CPU
 v samostatných bězích se stejnou maticí. Měřicí vrstva tak do srovnání technik
 nevstupuje vůbec a mez rovnocennosti 0,02 se zdůvodňuje vnímáním (méně než jeden
 vynechaný snímek za sekundu při 60 Hz), nikoli režií nástroje. Cena: hlavní
-matice se měří dvakrát, přibližně o 4,4 h navíc.
+matice se měří dvakrát, přibližně o 4,4 h navíc. Rozhodnutí podpořilo i to, že
+vliv vzorkování v O1 nebyl rovnoměrný (u raf nulový, u css-transition −0,008).
+Nástroj zapisuje interval vzorkování ke každému běhu a je součástí klíče
+skupiny, takže se dávky se vzorkováním a bez něj nikdy nezprůměrují dohromady.

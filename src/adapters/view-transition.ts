@@ -1,4 +1,4 @@
-import type { Adapter, AdapterContext, AdapterMeta } from '../types/adapter.ts'
+import type { Adapter, AdapterContext, AdapterMeta, OneShotMarks } from '../types/adapter.ts'
 import { formatTransform } from './interpolate.ts'
 
 /**
@@ -26,6 +26,7 @@ export class ViewTransitionAdapter implements Adapter {
   #ctx: AdapterContext | null = null
   #style: HTMLStyleElement | null = null
   #transition: ViewTransition | null = null
+  #marks: Promise<OneShotMarks> | null = null
 
   init(ctx: AdapterContext): void {
     this.#ctx = ctx
@@ -62,12 +63,28 @@ export class ViewTransitionAdapter implements Adapter {
     const target = farthestKeyframe(ctx.spec.keyframes)
     if (!target) return
 
-    this.#transition = document.startViewTransition(() => {
+    const startMs = performance.now()
+    const transition = document.startViewTransition(() => {
       for (const element of ctx.elements) {
         element.style.transform = formatTransform(target)
         element.style.opacity = String(target.opacity)
       }
     })
+    this.#transition = transition
+
+    // ready rejects when the transition is skipped; the run still has to end,
+    // so a skipped transition reports zero play time rather than hanging.
+    let readyMs = startMs
+    const ready = transition.ready.then(
+      () => { readyMs = performance.now() },
+      () => { readyMs = performance.now() },
+    )
+    let finishedMs = startMs
+    const finished = transition.finished.then(
+      () => { finishedMs = performance.now() },
+      () => { finishedMs = performance.now() },
+    )
+    this.#marks = Promise.all([ready, finished]).then(() => ({ startMs, readyMs, finishedMs }))
   }
 
   stop(): void {
@@ -86,9 +103,9 @@ export class ViewTransitionAdapter implements Adapter {
     this.#ctx = null
   }
 
-  /** Resolves once the transition has finished, for the page to await. */
-  get finished(): Promise<void> {
-    return this.#transition?.finished ?? Promise.resolve()
+  completion(): Promise<OneShotMarks> {
+    if (!this.#marks) return Promise.reject(new Error('completion() called before start()'))
+    return this.#marks
   }
 }
 

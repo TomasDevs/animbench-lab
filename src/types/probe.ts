@@ -50,6 +50,12 @@ export type RunMeta = {
   steadyStateToMs?: number
   /** Elements animating simultaneously during the steady state. */
   concurrentElements?: number
+  /**
+   * One-shot techniques only. Preparation is the time from the start call until
+   * the animation plays, which for View Transitions includes snapshotting every
+   * element; it is reported separately and kept out of the steady state.
+   */
+  oneShot?: { prepareMs: number; playMs: number }
   userAgent: string
   viewport: { width: number; height: number }
   devicePixelRatio: number

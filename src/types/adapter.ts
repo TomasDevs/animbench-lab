@@ -22,11 +22,27 @@ export type AdapterMeta = {
   scenes: SceneId[]
 }
 
+/** Moments of a one-shot animation, in the performance.now() clock. */
+export type OneShotMarks = {
+  /** start() was called. */
+  startMs: number
+  /** The browser had prepared the animation and began playing it. */
+  readyMs: number
+  /** The animation finished. */
+  finishedMs: number
+}
+
 export interface Adapter {
   init(ctx: AdapterContext): void
   start(): void
   stop(): void
   dispose(): void
+  /**
+   * Only for one-shot techniques, which have no duration to fill. Resolves when
+   * the animation has finished; the page then measures from readyMs to
+   * finishedMs instead of over a stagger-derived window.
+   */
+  completion?(): Promise<OneShotMarks>
 }
 
 /**

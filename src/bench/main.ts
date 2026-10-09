@@ -102,7 +102,7 @@ async function main(): Promise<void> {
       startMeter()
       panel?.setStatus('running')
 
-      window.setTimeout(() => {
+      const end = (): void => {
         // Collection must end before teardown: the CSS adapter's stop() forces a
         // style recalculation that would otherwise be recorded as a long frame.
         handle.finish()
@@ -111,7 +111,26 @@ async function main(): Promise<void> {
         meter?.stop()
         panel?.setStatus('done — readout frozen')
         resolve()
-      }, runDurationMs)
+      }
+
+      if (!adapter.completion) {
+        window.setTimeout(end, runDurationMs)
+        return
+      }
+
+      // A one-shot technique ends when it ends, not after a fixed time: a slow
+      // preparation would otherwise be cut off. Its own marks replace the
+      // stagger-derived window, so preparation stays out of the steady state.
+      void adapter.completion().then((marks) => {
+        meta.steadyStateFromMs = marks.readyMs
+        meta.steadyStateToMs = marks.finishedMs
+        meta.concurrentElements = scene.elements.length
+        meta.oneShot = {
+          prepareMs: marks.readyMs - marks.startMs,
+          playMs: marks.finishedMs - marks.readyMs,
+        }
+        end()
+      })
     })
 
   // The tool calls this to start the run, so building the scene is not recorded
