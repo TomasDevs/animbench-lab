@@ -1,0 +1,63 @@
+{
+  "target": {
+    "url": "http://localhost:4173/animbench-lab/react.html",
+    "matrix": {
+      "technique": [
+        "react-motion"
+      ],
+      "scene": [
+        "grid"
+      ],
+      "size": [
+        {
+          "complexity": 100,
+          "window": 10000
+        },
+        {
+          "complexity": 500,
+          "window": 20000
+        },
+        {
+          "complexity": 2000,
+          "window": 20000
+        }
+      ],
+      "seed": [
+        "42"
+      ],
+      "mode": [
+        "bench"
+      ]
+    }
+  },
+  "timing": {
+    "readyTimeoutMs": 30000,
+    "runTimeoutMs": 300000,
+    "cooldownMs": 15000
+  },
+  "batch": {
+    "repetitions": 10,
+    "warmupRuns": 1,
+    "shuffle": true,
+    "seed": 2026101006,
+    "expectedRefreshRateHz": 60,
+    "minFramesInWindow": 100
+  },
+  "browser": {
+    "headless": false,
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "requireHardwareAcceleration": true,
+    "target": "desktop"
+  },
+  "output": {
+    "ndjsonPath": "runs.ndjson",
+    "csvPath": "summary.csv"
+  },
+  "labels": {
+    "block": "react-motion",
+    "plan": "docs/final-measurement-plan.md (fixed 9. 10. 2026)"
+  }
+}
