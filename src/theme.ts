@@ -26,30 +26,42 @@ const THEME_ICON: Record<Theme, string> = {
   dark: '<path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.8 5.8 0 1 0 7.1 7.1z"/>',
 }
 
-/** A link that swaps the theme in place; the href keeps it working without JS. */
-export function themeToggle(current: Theme = readTheme()): HTMLAnchorElement {
+/**
+ * A link that swaps the theme in place; the href keeps it working without JS.
+ * onSwitch re-renders the page, so links built from the URL pick up the change.
+ */
+export function themeToggle(
+  onSwitch: () => void,
+  titles: Record<Theme, string>,
+  current: Theme = readTheme(),
+): HTMLAnchorElement {
   const next: Theme = current === 'dark' ? 'light' : 'dark'
-  const params = new URLSearchParams(window.location.search)
-  if (next === 'light') params.set('theme', 'light')
-  else params.delete('theme')
-
-  const query = params.toString()
   const toggle = document.createElement('a')
   toggle.className = 'theme-toggle'
-  toggle.href = query ? `${window.location.pathname}?${query}` : window.location.pathname
+  toggle.href = hrefWith('theme', next === 'light' ? 'light' : null)
   toggle.innerHTML =
     `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" ` +
     `fill="none" stroke="currentColor" stroke-width="1.25" ` +
     `stroke-linecap="round" stroke-linejoin="round">${THEME_ICON[next]}</svg>`
-  toggle.title = `Switch to ${next} theme`
-  toggle.setAttribute('aria-label', `Switch to ${next} theme`)
+  toggle.title = titles[next]
+  toggle.setAttribute('aria-label', titles[next])
   toggle.addEventListener('click', (event) => {
     event.preventDefault()
-    window.history.replaceState(null, '', toggle.href)
+    // Read at click time: the language toggle may have rewritten the URL since.
+    window.history.replaceState(null, '', hrefWith('theme', next === 'light' ? 'light' : null))
     applyTheme(next)
-    toggle.replaceWith(themeToggle(next))
+    onSwitch()
   })
   return toggle
+}
+
+/** The current page's URL with one parameter set, or removed when null. */
+export function hrefWith(name: string, value: string | null): string {
+  const params = new URLSearchParams(window.location.search)
+  if (value === null) params.delete(name)
+  else params.set(name, value)
+  const query = params.toString()
+  return query ? `${window.location.pathname}?${query}` : window.location.pathname
 }
 
 /**

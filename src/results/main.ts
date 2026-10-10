@@ -1,6 +1,7 @@
 import '../style.css'
 import './results.css'
-import { applyTheme, readTheme, themeToggle, withTheme } from '../theme.ts'
+import { applyTheme, readTheme, themeToggle } from '../theme.ts'
+import { applyLang, carry, decimal, langToggle, readLang, techniqueName, toggleClass, type Lang } from '../i18n.ts'
 // The dataset is chosen here, in one place. Switching to the final measurement
 // means pointing this import at analysis/output/final/summary.json.
 import summary from '../../analysis/output/pilot/summary.json'
@@ -65,12 +66,71 @@ const LABELS: Record<string, string> = {
 const BUCKET_LABELS = ['1', '2', '3', '4', '5+']
 const SVG = 'http://www.w3.org/2000/svg'
 
-const label = (id: string): string => LABELS[id] ?? id
+const STRINGS = {
+  en: {
+    title: 'animbench-lab results',
+    crumb: 'Results',
+    pilotStrong: 'Pilot data. ',
+    pilot: 'A verification run used to tune the method, not the thesis results. It has no CPU sampling and a 10 s window at every complexity.',
+    validRuns: (n: number) => `${n} valid runs`,
+    ratioTitle: 'Achieved share of the achievable frame rate',
+    ratioLead: 'Median of ten runs, measured in the steady-state window. 1.00 means every frame met the display’s budget.',
+    ratioAria: (scene: string) => `Refresh ratio by complexity on the ${scene} scene`,
+    others: 'Other techniques',
+    elements: (n: number) => `${n} elements`,
+    bucketTitle: (n: number) => `How long frames took at ${n} elements`,
+    bucketLead: 'Share of frames lasting one, two or more frame budgets. A pile at 2 is regular frame dropping: the display shows every other frame.',
+    bucketAria: (technique: string, scene: string) => `Share of frames by length in frame budgets, ${technique} on ${scene}`,
+    bucketHit: (bucket: string, share: string) => `${bucket} frame budgets: ${share}`,
+    bucketTip: (bucket: string) => `${bucket} × frame budget`,
+    ofFrames: (technique: string) => `of frames, ${technique}`,
+    tableTitle: 'All values',
+    tableLead: 'Pairwise Mann–Whitney tests with Holm correction against the other techniques of the same scene and complexity.',
+    margin: (m: string) => ` Equivalent means the 90 % interval of the difference lies within ±${m}.`,
+    columns: ['Technique', 'Refresh ratio', 'Range', 'Over budget', '1st pct', 'Against the others'],
+    differs: (n: number, of: number) => `differs from ${n} of ${of}`,
+    equivalent: (n: number, of: number) => `equivalent to ${n} of ${of}`,
+    undecided: 'undecided',
+    footer: 'Computed from the raw frame timestamps by analysis/analyze.py. The method and its reasoning are in docs/measurement-protocol.md and docs/final-measurement-plan.md.',
+    theme: { light: 'Switch to light theme', dark: 'Switch to dark theme' },
+  },
+  cs: {
+    title: 'animbench-lab výsledky',
+    crumb: 'Výsledky',
+    pilotStrong: 'Pilotní data. ',
+    pilot: 'Ověřovací běh k odladění metody, ne výsledky práce. Nemá vzorkování CPU a při každé složitosti používá okno 10 s.',
+    validRuns: (n: number) => `${n} platných běhů`,
+    ratioTitle: 'Podíl dosažené a dosažitelné snímkové frekvence',
+    ratioLead: 'Medián deseti běhů v okně ustáleného stavu. Hodnota 1,00 znamená, že každý snímek stihl rozpočet displeje.',
+    ratioAria: (scene: string) => `Podíl frekvence podle složitosti ve scéně ${scene}`,
+    others: 'Ostatní techniky',
+    elements: (n: number) => `${n} prvků`,
+    bucketTitle: (n: number) => `Jak dlouho trvaly snímky při ${n} prvcích`,
+    bucketLead: 'Podíl snímků trvajících jeden, dva a více snímkových rozpočtů. Hromada u 2 znamená pravidelné zahazování: displej ukáže jen každý druhý snímek.',
+    bucketAria: (technique: string, scene: string) => `Podíl snímků podle délky v rozpočtech, ${technique} ve scéně ${scene}`,
+    bucketHit: (bucket: string, share: string) => `${bucket} snímkové rozpočty: ${share}`,
+    bucketTip: (bucket: string) => `${bucket} × snímkový rozpočet`,
+    ofFrames: (technique: string) => `snímků, ${technique}`,
+    tableTitle: 'Všechny hodnoty',
+    tableLead: 'Párové Mannovy–Whitneyho testy s Holmovou korekcí proti ostatním technikám téže scény a složitosti.',
+    margin: (m: string) => ` Shodná znamená, že 90% interval rozdílu leží v mezích ±${m}.`,
+    columns: ['Technika', 'Podíl frekvence', 'Rozpětí', 'Nad rozpočet', '1. percentil', 'Proti ostatním'],
+    differs: (n: number, of: number) => `liší se od ${n} z ${of}`,
+    equivalent: (n: number, of: number) => `shodná s ${n} z ${of}`,
+    undecided: 'nerozhodnuto',
+    footer: 'Spočteno ze surových časových značek snímků skriptem analysis/analyze.py. Metoda a její zdůvodnění jsou v docs/measurement-protocol.md a docs/final-measurement-plan.md.',
+    theme: { light: 'Přepnout na světlý motiv', dark: 'Přepnout na tmavý motiv' },
+  },
+} satisfies Record<Lang, unknown>
+
+let t = STRINGS[readLang()]
+
+const label = (id: string): string => techniqueName(id, LABELS[id] ?? id)
 /** Scene ids are lowercase identifiers; technique names keep their own case. */
 const sceneName = (id: string): string => id.charAt(0).toUpperCase() + id.slice(1)
 const SCENE_ORDER = ['grid', 'composite', 'parallax']
-const percent = (v: number, digits = 0): string => `${(v * 100).toFixed(digits)} %`
-const ratio = (v: number): string => v.toFixed(3)
+const percent = (v: number, digits = 0): string => `${decimal(v * 100, digits)} %`
+const ratio = (v: number): string => decimal(v, 3)
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -150,12 +210,12 @@ function ratioChart(scene: string): HTMLElement {
   const y = (v: number): number => PAD.top + (1 - v) * plotH
 
   const root = svg('svg', { viewBox: `0 0 ${RATIO_W} ${RATIO_H}`, class: 'viz__svg', role: 'img' })
-  root.setAttribute('aria-label', `Refresh ratio by complexity on the ${scene} scene`)
+  root.setAttribute('aria-label', t.ratioAria(scene))
 
   for (const tick of [0, 0.25, 0.5, 0.75, 1]) {
     root.append(svg('line', { x1: PAD.left, x2: PAD.left + plotW, y1: y(tick), y2: y(tick), class: tick === 0 ? 'viz-axis' : 'viz-grid' }))
     const text = svg('text', { x: PAD.left - 6, y: y(tick), class: 'viz-tick', 'text-anchor': 'end', 'dominant-baseline': 'middle' })
-    text.textContent = tick.toFixed(2)
+    text.textContent = decimal(tick, 2)
     root.append(text)
   }
   complexities.forEach((c, i) => {
@@ -205,13 +265,13 @@ function ratioChart(scene: string): HTMLElement {
       x: x(i) - half, y: PAD.top, width: half * 2, height: plotH,
       class: 'viz-hit', tabindex: 0,
     })
-    band.setAttribute('aria-label', `${c} elements`)
+    band.setAttribute('aria-label', t.elements(c))
     const show = (): void => {
       crosshair.setAttribute('x1', String(x(i)))
       crosshair.setAttribute('x2', String(x(i)))
       crosshair.setAttribute('visibility', 'visible')
       const list = rows.filter((r) => r.complexity === c).sort((a, b) => a.refreshRatio - b.refreshRatio)
-      showTooltip(band, `${sceneName(scene)}, ${c} elements`,
+      showTooltip(band, `${sceneName(scene)}, ${t.elements(c)}`,
         list.map((r) => [ratio(r.refreshRatio), label(r.technique), r.technique === FOCUS]))
     }
     const hide = (): void => {
@@ -251,7 +311,7 @@ function bucketChart(scene: string, technique: string, complexity: number): HTML
   const y = (v: number): number => BPAD.top + (1 - v) * plotH
 
   const root = svg('svg', { viewBox: `0 0 ${BUCKET_W} ${BUCKET_H}`, class: 'viz__svg', role: 'img' })
-  root.setAttribute('aria-label', `Share of frames by length in frame budgets, ${label(technique)} on ${scene}`)
+  root.setAttribute('aria-label', t.bucketAria(label(technique), scene))
 
   for (const tick of [0, 0.5, 1]) {
     root.append(svg('line', { x1: BPAD.left, x2: BPAD.left + plotW, y1: y(tick), y2: y(tick), class: tick === 0 ? 'viz-axis' : 'viz-grid' }))
@@ -284,9 +344,9 @@ function bucketChart(scene: string, technique: string, complexity: number): HTML
       root.append(t)
     }
     const hit = svg('rect', { x: cx - slot / 2, y: BPAD.top, width: slot, height: plotH, class: 'viz-hit', tabindex: 0 })
-    hit.setAttribute('aria-label', `${BUCKET_LABELS[i]} frame budgets: ${percent(share, 1)}`)
-    const show = (): void => showTooltip(hit, `${BUCKET_LABELS[i]} × frame budget`,
-      [[percent(share, 1), `of frames, ${label(technique)}`, focus]])
+    hit.setAttribute('aria-label', t.bucketHit(BUCKET_LABELS[i] ?? '', percent(share, 1)))
+    const show = (): void => showTooltip(hit, t.bucketTip(BUCKET_LABELS[i] ?? ''),
+      [[percent(share, 1), t.ofFrames(label(technique)), focus]])
     hit.addEventListener('pointerenter', show)
     hit.addEventListener('pointerleave', hideTooltip)
     hit.addEventListener('focus', show)
@@ -303,20 +363,19 @@ function bucketChart(scene: string, technique: string, complexity: number): HTML
 function verdict(c: Combination): string {
   if (c.compared === 0) return '–'
   const parts = []
-  if (c.differsFrom) parts.push(`differs from ${c.differsFrom} of ${c.compared}`)
-  if (c.equivalentTo) parts.push(`equivalent to ${c.equivalentTo} of ${c.compared}`)
-  return parts.length ? parts.join(', ') : 'undecided'
+  if (c.differsFrom) parts.push(t.differs(c.differsFrom, c.compared))
+  if (c.equivalentTo) parts.push(t.equivalent(c.equivalentTo, c.compared))
+  return parts.length ? parts.join(', ') : t.undecided
 }
 
 function resultsTable(): HTMLElement {
   const wrap = el('div', 'table-wrap')
   const table = el('table', 'results-table')
   const head = el('tr')
-  const columns: [string, boolean][] = [
-    ['Technique', false], ['Refresh ratio', true], ['Range', true],
-    ['Over budget', true], ['1st pct', true], ['Against the others', false],
-  ]
-  for (const [h, numeric] of columns) head.append(el('th', numeric ? 'num' : undefined, h))
+  // Numeric columns are right-aligned; the first and last hold text.
+  t.columns.forEach((h, i) => {
+    head.append(el('th', i > 0 && i < t.columns.length - 1 ? 'num' : undefined, h))
+  })
   table.append(el('thead'))
   table.tHead?.append(head)
   const body = el('tbody')
@@ -327,7 +386,7 @@ function resultsTable(): HTMLElement {
     const complexities = [...new Set(combos(scene).map((c) => c.complexity))].sort((a, b) => a - b)
     for (const complexity of complexities) {
       const group = el('tr', 'results-table__group')
-      const cell = el('th', undefined, `${sceneName(scene)} · ${complexity} elements`)
+      const cell = el('th', undefined, `${sceneName(scene)} · ${t.elements(complexity)}`)
       cell.colSpan = 6
       cell.scope = 'colgroup'
       group.append(cell)
@@ -340,7 +399,7 @@ function resultsTable(): HTMLElement {
           el('td', 'num', ratio(c.refreshRatio)),
           el('td', 'num muted', `${ratio(c.refreshRatioMin)}–${ratio(c.refreshRatioMax)}`),
           el('td', 'num', percent(c.overBudget, 1)),
-          el('td', 'num', `${c.p1Fps.toFixed(1)} fps`),
+          el('td', 'num', `${decimal(c.p1Fps, 1)} fps`),
           el('td', 'muted', verdict(c)),
         )
         body.append(row)
@@ -361,77 +420,94 @@ function legend(): HTMLElement {
     span.append(el('span', `viz-key ${cls}`), document.createTextNode(text))
     return span
   }
-  list.append(item('viz-key--focus', label(FOCUS)), item('viz-key--muted', 'Other techniques'))
+  list.append(item('viz-key--focus', label(FOCUS)), item('viz-key--muted', t.others))
   return list
 }
 
 function render(): void {
   const app = document.querySelector<HTMLDivElement>('#app')
   if (!app) return
+  t = STRINGS[readLang()]
+  document.title = t.title
   const base = import.meta.env.BASE_URL
+  // Built off-document and swapped in at once, so a re-render never flashes empty.
+  const page = document.createDocumentFragment()
 
   const header = el('header', 'masthead')
   const row = el('div', 'masthead__row')
   const title = el('h1')
   const home = el('a', 'crumb', 'animbench-lab')
-  home.href = withTheme(base)
-  title.append(home, document.createTextNode(' / Results'))
-  row.append(title, themeToggle(readTheme()))
+  home.href = carry(base)
+  title.append(home, document.createTextNode(` / ${t.crumb}`))
+  const toggles = el('div', 'masthead__toggles')
+  toggles.append(langToggle(rerender), themeToggle(rerender, t.theme, readTheme()))
+  row.append(title, toggles)
   header.append(row)
 
   if (data.dataset !== 'final') {
     const notice = el('p', 'notice')
     notice.append(
-      el('strong', undefined, 'Pilot data. '),
-      document.createTextNode('A verification run used to tune the method, not the thesis results. It has no CPU sampling and a 10 s window at every complexity.'),
+      el('strong', undefined, t.pilotStrong),
+      document.createTextNode(t.pilot),
     )
     header.append(notice)
   }
 
   const facts = el('p', 'lead')
   const day = data.firstDay === data.lastDay ? data.firstDay : `${data.firstDay} – ${data.lastDay}`
-  facts.textContent = `${data.validRuns} valid runs · ${data.devices.join(', ')} · ${data.displays.join(', ')} · ${data.browsers.join(', ')} · ${day}`
+  facts.textContent = `${t.validRuns(data.validRuns)} · ${data.devices.join(', ')} · ${data.displays.join(', ')} · ${data.browsers.join(', ')} · ${day}`
   header.append(facts)
-  app.append(header)
+  page.append(header)
 
   const s1 = el('section', 'block')
   s1.append(
-    el('h2', undefined, 'Achieved share of the achievable frame rate'),
-    el('p', 'muted block__lead', 'Median of ten runs, measured in the steady-state window. 1.00 means every frame met the display’s budget.'),
+    el('h2', undefined, t.ratioTitle),
+    el('p', 'muted block__lead', t.ratioLead),
     legend(),
   )
   const pair = el('div', 'viz-row')
   for (const scene of SCENES) pair.append(ratioChart(scene))
   s1.append(pair)
-  app.append(s1)
+  page.append(s1)
 
   const top = Math.max(...data.combinations.map((c) => c.complexity))
   const s2 = el('section', 'block')
   s2.append(
-    el('h2', undefined, `How long frames took at ${top} elements`),
-    el('p', 'muted block__lead', 'Share of frames lasting one, two or more frame budgets. A pile at 2 is regular frame dropping: the display shows every other frame.'),
+    el('h2', undefined, t.bucketTitle(top)),
+    el('p', 'muted block__lead', t.bucketLead),
   )
   const grid = el('div', 'viz-row viz-row--four')
   for (const scene of SCENES) {
     grid.append(bucketChart(scene, FOCUS, top), bucketChart(scene, REFERENCE, top))
   }
   s2.append(grid)
-  app.append(s2)
+  page.append(s2)
 
   const s3 = el('section', 'block')
-  const margin = data.equivalenceMargin === null ? '' : ` Equivalent means the 90 % interval of the difference lies within ±${data.equivalenceMargin}.`
+  const margin = data.equivalenceMargin === null ? '' : t.margin(decimal(data.equivalenceMargin, 2))
   s3.append(
-    el('h2', undefined, 'All values'),
-    el('p', 'muted block__lead', `Pairwise Mann–Whitney tests with Holm correction against the other techniques of the same scene and complexity.${margin}`),
+    el('h2', undefined, t.tableTitle),
+    el('p', 'muted block__lead', t.tableLead + margin),
     resultsTable(),
   )
-  app.append(s3)
+  page.append(s3)
 
   const footer = el('footer', 'footnote')
-  footer.append(el('p', undefined, 'Computed from the raw frame timestamps by analysis/analyze.py. The method and its reasoning are in docs/measurement-protocol.md and docs/final-measurement-plan.md.'))
-  app.append(footer)
+  footer.append(el('p', undefined, t.footer))
+  page.append(footer)
+  app.replaceChildren(page)
+  hideTooltip()
   document.body.append(tooltip)
 }
 
+/** Toggles rewrite the URL and call this, so every link is rebuilt from it. */
+function rerender(): void {
+  const focused = toggleClass(document.activeElement)
+  render()
+  // Keeps keyboard focus on the toggle that was just used.
+  if (focused) document.querySelector<HTMLElement>(`.${focused}`)?.focus()
+}
+
 applyTheme(readTheme())
+applyLang(readLang())
 render()
