@@ -461,6 +461,24 @@ skript, styly a rozvržení (57 % proti 22–39 %), zatímco čas procesu grafic
 karty byl u všech technik shodný (52 %). Práce navíc tedy vzniká v hlavním
 vlákně, nikoli v kompozitoru. Pevná čísla přinese závěrečné měření.
 
+## Vytížení grafické karty
+
+Prohlížeč vytížení grafické karty nevystavuje, nástroj ho proto v blocích se
+vzorkováním CPU čte z operačního systému ve stejném intervalu:
+
+| Systém | Zdroj | Rozsah |
+|---|---|---|
+| macOS | ioreg, bez administrátorských práv | celá grafika (`system`) |
+| Windows | výkonnostní čítače | jen proces grafické karty prohlížeče (`browser-gpu-process`) |
+| Linux, Android | nedostupné | údaj chybí |
+
+Rozsah se zapisuje ke každému běhu jako `environment.gpuUsageScope`. Na macOS
+číslo zahrnuje i plochu a ostatní aplikace, proto musí být během měření zavřené
+a hodnoty se srovnávají jen mezi technikami na jednom zařízení, nikdy mezi
+systémy. Čas procesu grafické karty z protokolu vývojářských nástrojů je jiná
+veličina, čas procesoru strávený přípravou příkazů pro grafickou kartu, a uvádí
+se vedle vytížení samotné karty, nikoli místo něj.
+
 ## Medián u techniky, která vynechává snímky
 
 U techniky, která pravidelně vynechává snímky, není medián rozestupu spolehlivý.
@@ -533,7 +551,8 @@ okna nastavit nelze; měří se na skutečné obrazovce a její rozměry se zapi
 Kontrola akcelerace proto všude používá SystemInfo.getInfo a ke každému běhu se
 zapisuje, které údaje byly dostupné. Nedostupný údaj se v datech objeví jako
 chybějící hodnota, nikoli jako nula. Na telefonech tak VO1 pokrývá jen hlavní
-vlákno, nikoli procesy vykreslování a grafické karty.
+vlákno, nikoli procesy vykreslování a grafické karty ani vytížení samotné
+grafické karty, které na Androidu nástroj nečte.
 
 ## Omezení, která patří do metodiky
 

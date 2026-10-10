@@ -284,3 +284,29 @@ konfigurací všech sedmi původních bloků bylo doplněno `requirePowerSource:
 uprostřed běhu vede k zahození běhu s důvodem `power-changed` a k ukončení
 dávky. Změna nemění matici, počty běhů ani vyhodnocení; slovní pravidlo pouze
 převádí na kontrolu. Provedeno před zahájením měření.
+
+**D7, 10. 10. 2026: doplnění vytížení grafické karty k VO1.** Zadání práce
+uvádí vytížení CPU/GPU, plán však grafickou kartu pokrýval jen nepřímo, časem
+procesoru stráveným v procesu grafické karty prohlížeče. Prohlížeč vytížení
+grafické karty nevystavuje, nástroj ho proto čte z operačního systému: na macOS
+přes ioreg za celou grafiku (bez administrátorských práv), na Windows
+z výkonnostních čítačů jen za proces grafické karty prohlížeče. Na Linuxu
+a Androidu údaj není dostupný a v datech chybí, nezapisuje se jako nula.
+
+Měří se automaticky v blocích se vzorkováním CPU na počítači, tedy jen
+v `main-cpu`. Konfigurace, matice, počty běhů ani snímkové metriky se nemění.
+V datech je `cpuSamples[].gpuUtilization`, v souhrnném CSV `gpuBusyRatio_mean`
+a ke každému běhu `environment.gpuUsageScope` (`system` nebo
+`browser-gpu-process`).
+
+Vyhodnocení VO1 se rozšiřuje: vedle podílu času, kdy je hlavní vlákno
+zaneprázdněné, a času procesu grafické karty se uvádí i průměrné vytížení
+grafické karty v ustáleném okně, stejnými testy jako ostatní metriky VO1.
+Srovnává se jen mezi technikami na jednom zařízení. Hodnoty s různým rozsahem
+(`gpuUsageScope`) se nesdružují ani nesrovnávají, protože na macOS číslo
+zahrnuje i plochu a ostatní aplikace, kdežto na Windows jen prohlížeč.
+
+Omezení: na macOS je metrika hrubší, celosystémová. V ověřovacím testu se
+stabilní techniky držely na 10–15 % a jeden běh CSS přechodů vyskočil na 25 %.
+Rozdíly v řádu jednotek procent proto nelze vykládat jako vliv techniky bez
+podpory testu. Doplněno před zahájením měření.
