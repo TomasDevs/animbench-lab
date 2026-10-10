@@ -9,10 +9,17 @@ cd analysis
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/python analyze.py ../data/pilot output/pilot
+.venv/bin/python figures.py output/pilot
 ```
 
-The final measurement is processed the same way, with `../data/final` and
-`output/final`.
+`figures.py` draws the thesis figures from that output into
+`output/pilot/figures/`: PNG at 300 dpi and SVG, Czech labels with a decimal
+comma, and `popisky.md` with the captions in the thesis format.
+
+The final measurement is processed block by block, one folder of
+`../data/final/` at a time, for example `../data/final/main-frames` into
+`output/final/main-frames`. A folder mixing runs with and without CPU sampling is
+refused.
 
 ## What it does
 

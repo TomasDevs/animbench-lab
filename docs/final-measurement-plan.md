@@ -111,8 +111,8 @@ Běh se zahazuje a zapisuje i s důvodem, pokud:
 - stránka místo výsledku vrátila `__benchError`
 - klidové měření vrátilo frekvenci, která se od očekávané liší o více než 10 %
 - akcelerace nebyla dostupná
-- v ustáleném okně je méně než 100 snímků (jen hlavní matice; View Transitions
-  je krátký přechod a tolik snímků mít nemůže)
+- v ustáleném okně je méně než 100 snímků (všechny bloky kromě View
+  Transitions, jejichž krátký přechod tolik snímků mít nemůže)
 
 Zahozený běh se nenahrazuje dodatečně v jiném pořadí. Pokud by kombinace měla
 méně než osm platných běhů, uvádí se v práci samostatně.
@@ -228,10 +228,13 @@ přípravě konfigurací.
   měnila rychlost a tím i zátěž.
 
 Uplatnění pravidel zahození: nástroj je uplatňuje přímo při měření
-a zapisuje důvod (`expectedRefreshRateHz` s tolerancí 10 % a
-`minFramesInWindow: 100` jen v konfiguraci hlavní matice a sweepu). Analýza
-pravidlo počtu snímků kontroluje znovu jako pojistku a případné vyřazení zapíše
-do `excluded.csv`.
+a zapisuje důvod (`expectedRefreshRateHz` s tolerancí 10 %
+a `minFramesInWindow: 100`). Pravidlo počtu snímků platí pro všechny bloky
+kromě View Transitions, jejichž přechod trvá zhruba sekundu a sto snímků mít
+nemůže. Analýza je kontroluje znovu jako pojistku se stejným rozsahem a případné
+vyřazení zapíše do `excluded.csv`. (Upřesněno týž den před zahájením měření:
+původní znění omezovalo pravidlo na hlavní matici a sweep, kdežto analýza ho
+uplatňovala na všechny bloky s časovým oknem.)
 
 Očekávaná obnovovací frekvence se zadává podle zařízení, pro měřicí Mac 60 Hz.
 U displejů s adaptivní frekvencí se kontrola nevynucuje: v klidu může displej
