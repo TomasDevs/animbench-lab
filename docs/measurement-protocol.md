@@ -190,6 +190,19 @@ mezi běhy vychladne.
 Pasivní chlazení je vlastnost testovacího zařízení, nikoli metody, a jako takové
 patří do metodiky. Na aktivně chlazeném stroji by delší okno problém nedělalo.
 
+Na stolních počítačích stránka skutečný displej nevidí. Playwright při pevném
+okně 1280 × 720 emuluje obrazovku stejné velikosti s poměrem pixelů 1, takže se
+stránka vykresluje v poměru 1 i na displeji Retina. Údaje window.screen
+a devicePixelRatio ve výsledku proto na desktopu popisují emulaci, nikoli
+monitor. Skutečný displej čte nástroj ze systému a zapisuje ho ke každému běhu
+(environment.host.display, například DELL U2719D 2560 × 1440 při 60 Hz).
+Na telefonech se nic neemuluje a stránka se vykresluje na skutečné obrazovce
+v jejím nativním poměru pixelů.
+
+Běhy změřené na různých zařízeních, displejích, se zdrojem napájení nebo se
+vzorkováním procesoru a bez něj se při zpracování nikdy nesdružují. Analýza
+složku se smíšenými podmínkami odmítne.
+
 ## Pořadí a prodlevy
 
 Pořadí běhů je náhodné, aby se tepelné škrcení rozložilo rovnoměrně mezi

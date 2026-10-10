@@ -143,6 +143,22 @@ def sampling_interval(record: dict) -> str:
     return "on" if record.get("combination", {}).get("cpuSampling") == "on" else ""
 
 
+def conditions(record: dict) -> tuple[str, str, str, str]:
+    """Measurement conditions that must be equal for runs to be pooled.
+
+    CPU sampling changes the frame rate of a loaded technique (O1), and a
+    different device, display or power source changes everything. Fields missing
+    from older records count as empty.
+    """
+    env = record.get("environment", {})
+    host = env.get("host", {})
+    display = host.get("display")
+    if isinstance(display, dict):
+        display = json.dumps(display, sort_keys=True)
+    power = env.get("power", {}).get("start", {}).get("source", "")
+    return (sampling_interval(record), host.get("model", ""), display or "", power)
+
+
 def load_runs(data_dir: Path) -> tuple[list[Run], list[dict]]:
     """Valid runs of one block, plus the ones this script discarded itself.
 
@@ -152,7 +168,7 @@ def load_runs(data_dir: Path) -> tuple[list[Run], list[dict]]:
     """
     runs: list[Run] = []
     excluded: list[dict] = []
-    intervals: set[str] = set()
+    seen: set[tuple[str, str, str, str]] = set()
     DATASET.clear()
     for path in sorted(data_dir.glob("*.ndjson")):
         with path.open(encoding="utf-8") as handle:
@@ -172,17 +188,18 @@ def load_runs(data_dir: Path) -> tuple[list[Run], list[dict]]:
                                      "complexity": run.complexity,
                                      "reason": f"{run.frames_in_window} frames in window"})
                     continue
-                intervals.add(sampling_interval(record))
+                seen.add(conditions(record))
                 runs.append(run)
                 remember_environment(record)
 
-    # Runs with and without CPU sampling must never be pooled: sampling costs a
-    # loaded technique frame rate (O1), so a mixed group would blur exactly the
-    # difference being measured.
-    if len(intervals) > 1:
-        sys.exit(f"{data_dir} mixes runs with different CPU sampling ({sorted(intervals)}). "
-                 "Analyse each block on its own.")
-    DATASET["cpuSampling"] = next(iter(intervals), "")
+    # Runs measured under different conditions must never be pooled: a mixed
+    # group would blur exactly the difference being measured.
+    if len(seen) > 1:
+        names = ("CPU sampling", "device", "display", "power source")
+        differing = [names[i] for i in range(4) if len({c[i] for c in seen}) > 1]
+        sys.exit(f"{data_dir} mixes runs with different {', '.join(differing)}. "
+                 "Analyse each block and device on its own.")
+    DATASET["cpuSampling"] = next(iter(seen), ("",))[0]
     return runs, excluded
 
 
