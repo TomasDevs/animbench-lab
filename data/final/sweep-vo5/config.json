@@ -43,7 +43,8 @@
     "shuffle": true,
     "seed": 2026101007,
     "expectedRefreshRateHz": 60,
-    "minFramesInWindow": 100
+    "minFramesInWindow": 100,
+    "requirePowerSource": "ac"
   },
   "browser": {
     "headless": false,

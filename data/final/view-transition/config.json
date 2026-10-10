@@ -35,7 +35,8 @@
     "warmupRuns": 1,
     "shuffle": true,
     "seed": 2026101004,
-    "expectedRefreshRateHz": 60
+    "expectedRefreshRateHz": 60,
+    "requirePowerSource": "ac"
   },
   "browser": {
     "headless": false,

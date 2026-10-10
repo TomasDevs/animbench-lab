@@ -1,26 +1,23 @@
 {
   "target": {
-    "url": "http://localhost:4173/animbench-lab/react.html",
+    "url": "http://localhost:4173/animbench-lab/bench.html",
     "matrix": {
       "technique": [
-        "react-motion"
+        "raf",
+        "css-transition",
+        "css-keyframes",
+        "waapi",
+        "gsap",
+        "motion"
       ],
       "scene": [
         "grid"
       ],
-      "size": [
-        {
-          "complexity": 100,
-          "window": 10000
-        },
-        {
-          "complexity": 500,
-          "window": 20000
-        },
-        {
-          "complexity": 2000,
-          "window": 20000
-        }
+      "complexity": [
+        "2000"
+      ],
+      "window": [
+        "20000"
       ],
       "seed": [
         "42"
@@ -39,10 +36,11 @@
     "repetitions": 10,
     "warmupRuns": 1,
     "shuffle": true,
-    "seed": 2026101006,
+    "seed": 2026101008,
     "expectedRefreshRateHz": 60,
     "minFramesInWindow": 100,
-    "requirePowerSource": "ac"
+    "requirePowerSource": "battery",
+    "minBatteryPercent": 80
   },
   "browser": {
     "headless": false,
@@ -58,7 +56,7 @@
     "csvPath": "summary.csv"
   },
   "labels": {
-    "block": "react-motion",
+    "block": "battery",
     "plan": "docs/final-measurement-plan.md (fixed 9. 10. 2026)"
   }
 }

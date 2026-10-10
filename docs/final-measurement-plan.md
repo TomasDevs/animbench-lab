@@ -276,3 +276,11 @@ a propad CSS přechodů na baterii zachovají.
 Omezení: bloky v síti a na baterii neběží současně, takže mohou nést i vliv
 odlišné doby měření, například teploty místnosti. Uvádí se jako omezení
 srovnání.
+
+**D6, 10. 10. 2026: vynucení zdroje napájení v zafixovaných blocích.** Plán
+požadoval napájení ze sítě jen slovně („zařízení připojené k napájení"). Do
+konfigurací všech sedmi původních bloků bylo doplněno `requirePowerSource:
+"ac"`, takže nástroj běh na baterii odmítne spustit a vytažení nabíječky
+uprostřed běhu vede k zahození běhu s důvodem `power-changed` a k ukončení
+dávky. Změna nemění matici, počty běhů ani vyhodnocení; slovní pravidlo pouze
+převádí na kontrolu. Provedeno před zahájením měření.
