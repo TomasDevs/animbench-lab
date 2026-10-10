@@ -25,13 +25,9 @@ body {
   max-width: 52rem;
 }
 
-.crumb {
-  color: var(--ink-muted);
-  text-decoration: none;
-}
-
-.crumb:hover {
-  color: var(--ink);
+.masthead .lead {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 .notice {
@@ -47,24 +43,6 @@ body {
 .notice strong {
   color: var(--ink);
   font-weight: 550;
-}
-
-.masthead .lead {
-  margin-top: 0.75rem;
-  font-size: 0.8125rem;
-}
-
-.block {
-  margin-bottom: calc(var(--step) * 2.25);
-}
-
-.block h2 {
-  padding-bottom: 0.375rem;
-}
-
-.block__lead {
-  max-width: 40rem;
-  font-size: 0.8125rem;
 }
 
 /* Charts ------------------------------------------------------------------ */

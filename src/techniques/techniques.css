@@ -1,0 +1,158 @@
+/* Techniques page. Builds on the shared styles in style.css. */
+
+.masthead .lead {
+  margin-top: 0.75rem;
+  max-width: 38rem;
+}
+
+.block__lead + .block__lead {
+  margin-top: 0.75rem;
+}
+
+/* Pipeline ---------------------------------------------------------------- */
+
+.pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.375rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.pipeline__step {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  counter-increment: step;
+}
+
+.pipeline__name {
+  font-size: 0.8125rem;
+  font-weight: 550;
+}
+
+.pipeline__name::before {
+  content: counter(step) '. ';
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+
+.pipeline__what {
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+}
+
+/* The steps transform and opacity avoid read as absent, not as disabled. */
+.pipeline__step.is-skipped {
+  border-style: dashed;
+}
+
+.pipeline__step.is-skipped .pipeline__name {
+  color: var(--ink-muted);
+  text-decoration: line-through;
+}
+
+@media (max-width: 34rem) {
+  .pipeline {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Technique cards ---------------------------------------------------------- */
+
+.technique {
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.block__lead + .technique {
+  margin-top: 0.75rem;
+}
+
+.technique__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+}
+
+.technique h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 550;
+}
+
+.technique__driver {
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+}
+
+.technique__driver::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.375rem;
+  border-radius: 50%;
+  vertical-align: 0.1em;
+}
+
+/* Filled for the browser, hollow for a script: the shape carries it, not only the tone. */
+.technique__driver--browser::before {
+  background: var(--ink-muted);
+}
+
+.technique__driver--script::before {
+  border: 1px solid var(--ink-muted);
+}
+
+.technique__summary {
+  margin-top: 0.375rem;
+  max-width: 38rem;
+}
+
+.technique__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.technique__facts dt {
+  color: var(--ink-muted);
+}
+
+.technique__facts dd {
+  margin: 0;
+}
+
+.technique__code {
+  margin: 0.875rem 0 0;
+  padding: 0.75rem 0.875rem;
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: var(--surface-hover);
+  font: 0.75rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.technique__note {
+  margin-top: 0.75rem;
+  max-width: 38rem;
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 34rem) {
+  .technique__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .technique__facts dd + dt {
+    margin-top: 0.375rem;
+  }
+}

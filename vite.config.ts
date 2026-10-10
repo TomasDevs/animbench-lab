@@ -14,6 +14,7 @@ export default defineConfig({
         validate: fileURLToPath(new URL('validate.html', import.meta.url)),
         react: fileURLToPath(new URL('react.html', import.meta.url)),
         results: fileURLToPath(new URL('results.html', import.meta.url)),
+        techniques: fileURLToPath(new URL('techniques.html', import.meta.url)),
       },
     },
   },

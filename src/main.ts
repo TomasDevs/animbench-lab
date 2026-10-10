@@ -30,6 +30,8 @@ const STRINGS = {
     unavailable: (limit: number) => `Not measurable above ${limit} elements`,
     separate: 'Measured separately',
     tools: 'Tools',
+    techniques: 'Techniques',
+    techniquesNote: 'What each technique is, in plain language, and how to recognise it.',
     results: 'Results',
     resultsNote: 'Frame rate per technique, scene and complexity, with test outcomes.',
     validate: 'Equivalence check',
@@ -51,6 +53,8 @@ const STRINGS = {
     unavailable: (limit: number) => `Nad ${limit} prvků neměřitelné`,
     separate: 'Měřeno samostatně',
     tools: 'Nástroje',
+    techniques: 'Techniky',
+    techniquesNote: 'Co je která technika, srozumitelně, a jak ji poznat.',
     results: 'Výsledky',
     resultsNote: 'Snímková frekvence podle techniky, scény a složitosti, s výsledky testů.',
     validate: 'Kontrola shody',
@@ -174,6 +178,10 @@ async function render(): Promise<void> {
 
   const list = el('div', 'tools__list')
 
+  const techniquesLink = el('a', 'tool')
+  techniquesLink.href = carry(BASE + 'techniques.html')
+  techniquesLink.append(el('span', 'tool__name', t.techniques), el('span', 'muted', t.techniquesNote))
+
   const results = el('a', 'tool')
   results.href = carry(BASE + 'results.html')
   results.append(el('span', 'tool__name', t.results), el('span', 'muted', t.resultsNote))
@@ -186,7 +194,7 @@ async function render(): Promise<void> {
   react.href = `${BASE}react.html?complexity=500&seed=42&window=10000&mode=demo`
   react.append(el('span', 'tool__name', t.react), el('span', 'muted', t.reactNote))
 
-  list.append(results, validate, react)
+  list.append(techniquesLink, results, validate, react)
   tools.append(list)
   page.append(tools)
 

@@ -92,6 +92,7 @@ const STRINGS = {
     equivalent: (n: number, of: number) => `equivalent to ${n} of ${of}`,
     undecided: 'undecided',
     footer: 'Computed from the raw frame timestamps by analysis/analyze.py. The method and its reasoning are in docs/measurement-protocol.md and docs/final-measurement-plan.md.',
+    techniques: 'What each technique is: Techniques',
     theme: { light: 'Switch to light theme', dark: 'Switch to dark theme' },
   },
   cs: {
@@ -119,6 +120,7 @@ const STRINGS = {
     equivalent: (n: number, of: number) => `shodná s ${n} z ${of}`,
     undecided: 'nerozhodnuto',
     footer: 'Spočteno ze surových časových značek snímků skriptem analysis/analyze.py. Metoda a její zdůvodnění jsou v docs/measurement-protocol.md a docs/final-measurement-plan.md.',
+    techniques: 'Co je která technika: Techniky',
     theme: { light: 'Přepnout na světlý motiv', dark: 'Přepnout na tmavý motiv' },
   },
 } satisfies Record<Lang, unknown>
@@ -493,7 +495,11 @@ function render(): void {
   page.append(s3)
 
   const footer = el('footer', 'footnote')
-  footer.append(el('p', undefined, t.footer))
+  const techniquesLink = el('a', undefined, t.techniques)
+  techniquesLink.href = carry(base + 'techniques.html')
+  const techniquesLine = el('p')
+  techniquesLine.append(techniquesLink)
+  footer.append(el('p', undefined, t.footer), techniquesLine)
   page.append(footer)
   app.replaceChildren(page)
   hideTooltip()

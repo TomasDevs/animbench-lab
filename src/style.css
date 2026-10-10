@@ -112,6 +112,30 @@ p {
   color: var(--ink-muted);
 }
 
+/* Subpages --------------------------------------------------------------- */
+
+.crumb {
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+.crumb:hover {
+  color: var(--ink);
+}
+
+.block {
+  margin-bottom: calc(var(--step) * 2.25);
+}
+
+.block h2 {
+  padding-bottom: 0.375rem;
+}
+
+.block__lead {
+  max-width: 40rem;
+  font-size: 0.8125rem;
+}
+
 /* Scenes ------------------------------------------------------------------ */
 
 .scene {
@@ -256,6 +280,14 @@ p {
   max-width: 38rem;
   color: var(--ink-muted);
   font-size: 0.8125rem;
+}
+
+.footnote p + p {
+  margin-top: 0.5rem;
+}
+
+.footnote a {
+  color: var(--ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
