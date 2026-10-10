@@ -36,6 +36,11 @@ ALPHA = 0.05
 # intervals, the same tolerance animbench uses.
 OVER_BUDGET_FACTOR = 1.5
 
+# Main-matrix runs with fewer frames than this in the steady-state window are
+# discarded (final measurement plan). One-shot runs are exempt: a View
+# Transition lasts about a second and cannot reach it.
+MIN_FRAMES_IN_WINDOW = 100
+
 # Metrics the tests are run on. Median is deliberately absent: for a technique
 # that drops every other frame the intervals are either 16.7 or 33.3 ms and the
 # median jumps between them from run to run.
@@ -125,8 +130,29 @@ def run_metrics(record: dict) -> Run | None:
 DATASET: dict = {}
 
 
-def load_runs(data_dir: Path) -> list[Run]:
+def sampling_interval(record: dict) -> str:
+    """CPU sampling interval of a run, as a label; empty when it did not sample.
+
+    Newer records carry cpuSampleIntervalMs; the O1 overhead check predates it
+    and has combination.cpuSampling instead.
+    """
+    for source in (record, record.get("meta", {}), record.get("combination", {})):
+        value = source.get("cpuSampleIntervalMs")
+        if value not in (None, "", 0, "0"):
+            return str(value)
+    return "on" if record.get("combination", {}).get("cpuSampling") == "on" else ""
+
+
+def load_runs(data_dir: Path) -> tuple[list[Run], list[dict]]:
+    """Valid runs of one block, plus the ones this script discarded itself.
+
+    animbench applies the plan's discard rules while measuring. The frame-count
+    rule is checked again here, so a run the tool let through by mistake cannot
+    reach the tests unnoticed.
+    """
     runs: list[Run] = []
+    excluded: list[dict] = []
+    intervals: set[str] = set()
     DATASET.clear()
     for path in sorted(data_dir.glob("*.ndjson")):
         with path.open(encoding="utf-8") as handle:
@@ -137,10 +163,27 @@ def load_runs(data_dir: Path) -> list[Run]:
                 if not record.get("valid"):
                     continue
                 run = run_metrics(record)
-                if run is not None:
-                    runs.append(run)
-                    remember_environment(record)
-    return runs
+                if run is None:
+                    continue
+                one_shot = "oneShot" in record.get("meta", {})
+                if not one_shot and run.frames_in_window < MIN_FRAMES_IN_WINDOW:
+                    excluded.append({"file": path.name, "sequence": record.get("sequence"),
+                                     "scene": run.scene, "technique": run.technique,
+                                     "complexity": run.complexity,
+                                     "reason": f"{run.frames_in_window} frames in window"})
+                    continue
+                intervals.add(sampling_interval(record))
+                runs.append(run)
+                remember_environment(record)
+
+    # Runs with and without CPU sampling must never be pooled: sampling costs a
+    # loaded technique frame rate (O1), so a mixed group would blur exactly the
+    # difference being measured.
+    if len(intervals) > 1:
+        sys.exit(f"{data_dir} mixes runs with different CPU sampling ({sorted(intervals)}). "
+                 "Analyse each block on its own.")
+    DATASET["cpuSampling"] = next(iter(intervals), "")
+    return runs, excluded
 
 
 def remember_environment(record: dict) -> None:
@@ -344,6 +387,7 @@ def summary(data_dir: Path, runs: list[Run], omnibus: list[dict], pairwise: list
         "firstDay": DATASET.get("first_day", ""),
         "lastDay": DATASET.get("last_day", ""),
         "validRuns": len(runs),
+        "cpuSampling": DATASET.get("cpuSampling", ""),
         "equivalenceMargin": EQUIVALENCE_MARGIN.get("refresh_ratio"),
         "combinations": combos,
         "omnibus": [o for o in omnibus if o["metric"] == "refresh_ratio"],
@@ -367,7 +411,7 @@ def main() -> None:
     data_dir, out_dir = Path(sys.argv[1]), Path(sys.argv[2])
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    runs = load_runs(data_dir)
+    runs, excluded = load_runs(data_dir)
     if not runs:
         sys.exit(f"No valid runs in {data_dir}")
 
@@ -378,10 +422,12 @@ def main() -> None:
     write_csv(out_dir / "kruskal_wallis.csv", omnibus)
     write_csv(out_dir / "mann_whitney_holm.csv", pairwise)
     write_csv(out_dir / "shapiro.csv", normality(runs))
+    write_csv(out_dir / "excluded.csv", excluded)
     (out_dir / "summary.json").write_text(
         json.dumps(summary(data_dir, runs, omnibus, pairwise), indent=1), encoding="utf-8")
 
-    print(f"{len(runs)} valid runs from {data_dir}")
+    print(f"{len(runs)} valid runs from {data_dir}"
+          + (f", {len(excluded)} excluded here (see excluded.csv)" if excluded else ""))
     print(f"{len(omnibus)} omnibus tests, {sum(r['p'] < ALPHA for r in omnibus)} significant")
     print(f"{len(pairwise)} pairwise comparisons, {sum(r['significant'] for r in pairwise)} significant"
           f" ({sum(r['significant_all'] for r in pairwise)} with Holm over all pairs)")

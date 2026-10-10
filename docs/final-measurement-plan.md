@@ -98,6 +98,11 @@ Odhad délky na jednom zařízení, včetně rozehřívacích běhů a prodlev:
 Hlavní matice se může spustit samostatně jako první blok; zbytek lze měřit
 v dalších dávkách se stejnou konfigurací prostředí.
 
+Každý blok se ukládá do vlastní podsložky `data/final/<blok>/` a analyzuje se
+samostatně. Bloky sdílejí některé kombinace (sweep a hlavní matice), dávky se
+vzorkováním CPU a bez něj se nesmějí slučovat. Analýza běh se smíšeným
+vzorkováním odmítne.
+
 ## Zahození běhu
 
 Běh se zahazuje a zapisuje i s důvodem, pokud:
@@ -209,3 +214,28 @@ matice se měří dvakrát, přibližně o 4,4 h navíc. Rozhodnutí podpořilo 
 vliv vzorkování v O1 nebyl rovnoměrný (u raf nulový, u css-transition −0,008).
 Nástroj zapisuje interval vzorkování ke každému běhu a je součástí klíče
 skupiny, takže se dávky se vzorkováním a bez něj nikdy nezprůměrují dohromady.
+
+**D4, 10. 10. 2026: doplnění parametrů, které plán neuváděl.** Zjištěno při
+přípravě konfigurací.
+
+Šířka okna u zvláštního režimu a doplňkového srovnání:
+
+- Lottie a React Motion: stejně jako hlavní matice, 10 s pro 100 prvků a 20 s
+  pro 500 a 2000 prvků. React Motion se porovnává s vanilla Motion z hlavní
+  matice, takže musí mít shodné okno.
+- Scroll-driven: 20 s pro všechny složitosti, jako v pilotu. Vzdálenost posunu je
+  pevná, takže délka určuje rychlost posunu. Odlišná délka podle složitosti by
+  měnila rychlost a tím i zátěž.
+
+Uplatnění pravidel zahození: nástroj je uplatňuje přímo při měření
+a zapisuje důvod (`expectedRefreshRateHz` s tolerancí 10 % a
+`minFramesInWindow: 100` jen v konfiguraci hlavní matice a sweepu). Analýza
+pravidlo počtu snímků kontroluje znovu jako pojistku a případné vyřazení zapíše
+do `excluded.csv`.
+
+Očekávaná obnovovací frekvence se zadává podle zařízení, pro měřicí Mac 60 Hz.
+U displejů s adaptivní frekvencí se kontrola nevynucuje: v klidu může displej
+frekvenci snížit, takže klidové měření by se od jmenovité hodnoty lišilo
+a pravidlo by zahodilo všechny běhy. U takových zařízení se klidová frekvence
+pouze zaznamenává ke každému běhu, jak stanoví protokol, a v práci se uvádí
+rozsah naměřených hodnot.
