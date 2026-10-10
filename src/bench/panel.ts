@@ -41,11 +41,18 @@ function styles(): HTMLStyleElement {
   gap: 8px;
   padding: 12px;
   border-radius: 6px;
-  background: rgba(17, 17, 17, 0.88);
+  /* Opaque: moving elements showing through read as the panel sinking under them. */
+  background: #111;
   color: #f5f5f5;
   font: 12px/1.4 system-ui, sans-serif;
   min-width: 210px;
+  /* A view transition paints its snapshots in the top layer, above any z-index.
+     A name of its own puts the panel in its own group, last in paint order. */
+  view-transition-name: demo-panel;
 }
+/* Shown live rather than as a crossfade of two snapshots, so the readout keeps updating. */
+::view-transition-old(demo-panel) { display: none; }
+::view-transition-new(demo-panel) { animation: none; }
 .demo-panel label { display: grid; gap: 3px; }
 .demo-panel select {
   font: inherit;
