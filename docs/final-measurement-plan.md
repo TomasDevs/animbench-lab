@@ -310,3 +310,31 @@ Omezení: na macOS je metrika hrubší, celosystémová. V ověřovacím testu s
 stabilní techniky držely na 10–15 % a jeden běh CSS přechodů vyskočil na 25 %.
 Rozdíly v řádu jednotek procent proto nelze vykládat jako vliv techniky bez
 podpory testu. Doplněno před zahájením měření.
+
+**D8, 10. 10. 2026: klidové vytížení grafické karty jen jako kontrola.**
+Nástroj v bloku `main-cpu` před každým během, mezi `__benchReady` a startem,
+přečte tři vzorky vytížení grafické karty po sekundě a uloží jejich medián
+(`gpuIdleUtilization`, v CSV `gpuIdleRatio_mean`, rozdíl během a klidu
+`gpuExtraRatio_mean`). Prodlouží to blok zhruba o 3 s na běh, asi o 20 minut
+celkem. Snímkové bloky se nemění.
+
+Ověřovací test (composite, 2000 prvků, 3 běhy na techniku) ukázal, že klid sám
+kolísá mezi 0 a 15 %. Odečet klidu rozptyl nezmenšil, ale zvýšil, u raf
+a css-keyframes zhruba dvojnásobně, a dával i záporné hodnoty. Klid se čte hned
+po stavbě scény, kdy grafika ještě dokončuje nahrávání, takže nepopisuje klidový
+stav stroje.
+
+Rozhodnutí:
+
+- Hlavní metrikou vytížení grafické karty pro VO1 zůstává `gpuBusyRatio`
+  (podíl 0–1, průměr vzorků v ustáleném okně), jak stanovuje D7.
+  `gpuExtraRatio` se nevyhodnocuje.
+- Klidová hodnota slouží ke kontrole zátěže stroje. Citlivostní analýza VO1
+  zopakuje testy bez běhů, jejichž klidová hodnota leží nad horní Tukeyho
+  hranicí (horní kvartil + 1,5 × mezikvartilové rozpětí klidových hodnot
+  všech běhů bloku na jednom zařízení). Pravidlo je stanovené před měřením;
+  pokud citlivostní analýza změní závěr některého srovnání, uvádí se to.
+- Delší měření klidu po ustálení scény (2 s čekání, 10 vzorků) se nezavádí:
+  prodloužilo by blok o více než hodinu bez doložené výhody.
+
+Doplněno před zahájením měření.

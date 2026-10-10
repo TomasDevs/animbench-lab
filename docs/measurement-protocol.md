@@ -479,6 +479,11 @@ systémy. Čas procesu grafické karty z protokolu vývojářských nástrojů j
 veličina, čas procesoru strávený přípravou příkazů pro grafickou kartu, a uvádí
 se vedle vytížení samotné karty, nikoli místo něj.
 
+Před každým během bloku se vzorkováním se přečtou tři klidové vzorky a uloží
+se jejich medián. Slouží jen ke kontrole jiné zátěže stroje, od vytížení během
+animace se neodečítá: klid se čte hned po stavbě scény a sám kolísá natolik,
+že by odečet rozptyl zvětšil (viz D8 v plánu závěrečného měření).
+
 ## Medián u techniky, která vynechává snímky
 
 U techniky, která pravidelně vynechává snímky, není medián rozestupu spolehlivý.
