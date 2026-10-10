@@ -241,38 +241,6 @@ body {
   font-weight: 600;
 }
 
-/* Table ------------------------------------------------------------------- */
-
-.table-wrap {
-  margin-top: 0.75rem;
-  overflow-x: auto;
-}
-
-.results-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.results-table th,
-.results-table td {
-  padding: 0.375rem 0.75rem 0.375rem 0;
-  border-bottom: 1px solid var(--rule);
-  text-align: left;
-  white-space: nowrap;
-}
-
-.results-table thead th {
-  color: var(--ink-muted);
-  font-weight: 500;
-}
-
-.results-table .num,
-.results-table th.num {
-  text-align: right;
-}
-
 .results-table__group th {
   padding-top: 1rem;
   color: var(--ink);

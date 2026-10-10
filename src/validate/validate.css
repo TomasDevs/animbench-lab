@@ -1,0 +1,79 @@
+/* Equivalence check page. Builds on the shared styles in style.css. */
+
+body {
+  max-width: 52rem;
+}
+
+/* Off screen but laid out: the sampler reads real computed transforms. */
+#stage {
+  position: fixed;
+  top: -10000px;
+  left: 0;
+  width: 900px;
+  height: 600px;
+}
+
+.masthead .lead {
+  margin-top: 0.75rem;
+  max-width: 40rem;
+  font-size: 0.8125rem;
+}
+
+.status {
+  font-size: 0.875rem;
+}
+
+.status--pass,
+.status--fail {
+  color: var(--ink);
+  font-weight: 550;
+}
+
+/* Verdict: the mark and the word carry it, the weight flags a failure. */
+.verdict__mark {
+  display: inline-block;
+  width: 1.1em;
+  color: var(--ink-muted);
+}
+
+.verdict--fail {
+  font-weight: 600;
+}
+
+.verdict--fail .verdict__mark {
+  color: var(--ink);
+}
+
+.results-table tr.is-fail td:first-child {
+  box-shadow: inset 2px 0 0 var(--ink);
+  padding-left: 0.5rem;
+}
+
+.legend {
+  margin-top: 0.875rem;
+}
+
+.raw {
+  margin-top: 1.25rem;
+  font-size: 0.8125rem;
+}
+
+.raw summary {
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.raw summary:hover {
+  color: var(--ink);
+}
+
+.raw pre {
+  max-height: 24rem;
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0.875rem;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: var(--surface-hover);
+  font: 0.75rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+}

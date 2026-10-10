@@ -187,7 +187,7 @@ async function render(): Promise<void> {
   results.append(el('span', 'tool__name', t.results), el('span', 'muted', t.resultsNote))
 
   const validate = el('a', 'tool')
-  validate.href = BASE + 'validate.html'
+  validate.href = carry(BASE + 'validate.html')
   validate.append(el('span', 'tool__name', t.validate), el('span', 'muted', t.validateNote))
 
   const react = el('a', 'tool')
