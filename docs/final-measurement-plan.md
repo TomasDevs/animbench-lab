@@ -93,7 +93,8 @@ Odhad délky na jednom zařízení, včetně rozehřívacích běhů a prodlev:
 | React Motion | 33 | 0,4 h |
 | práh počtu prvků (VO5) | 352 | 4,1 h |
 | ověření režie CPU (O1) | 44 | 0,6 h |
-| **celkem** | **1386** | **15,4 h** |
+| doplňkový blok na baterii (D5) | 66 | 1,0 h |
+| **celkem** | **1452** | **16,4 h** |
 
 Hlavní matice se může spustit samostatně jako první blok; zbytek lze měřit
 v dalších dávkách se stejnou konfigurací prostředí.
@@ -242,3 +243,36 @@ frekvenci snížit, takže klidové měření by se od jmenovité hodnoty lišil
 a pravidlo by zahodilo všechny běhy. U takových zařízení se klidová frekvence
 pouze zaznamenává ke každému běhu, jak stanoví protokol, a v práci se uvádí
 rozsah naměřených hodnot.
+
+**D5, 10. 10. 2026: doplňkový blok měření na baterii.** Doplněno před
+zahájením měření na přání autora: zjistit, zda a jak se výsledky liší při
+napájení z baterie. Blok je doplňkový a do hlavní statistiky nevstupuje.
+
+| | |
+|---|---|
+| Techniky | raf, css-transition, css-keyframes, waapi, gsap, motion |
+| Scéna | grid |
+| Složitost | 2000 prvků, okno 20 s |
+| Opakování | 10 platných běhů a 1 rozehřívací na techniku, náhodné pořadí |
+| Rozsah | 66 běhů, přibližně 57 minut |
+| Výstup | `data/final/battery/` |
+
+Složitost 2000 byla zvolena proto, že při 100 a 500 prvcích dosahovaly všechny
+techniky v pilotu stropu displeje a vliv napájení by se tam neprojevil. Celá
+hlavní matice by se do jednoho vybití mezi 100 a 80 % nevešla.
+
+Podmínky: stejný stroj a stejný displej jako v bloku `main-frames`, nabití mezi
+80 a 100 % (nástroj dávku pod 80 % sám ukončí), mezi sezeními dobíjení, Režim
+nízké spotřeby vypnutý a zapsaný ke každému běhu. Nástroj vynucuje zdroj
+napájení: `requirePowerSource: "ac"` pro všechny ostatní bloky,
+`"battery"` pro tento.
+
+Srovnání: s toutéž podmnožinou bloku `main-frames` (grid, 2000 prvků).
+Pro každou techniku Mannův–Whitneyho test mezi napájením ze sítě a z baterie
+s Holmovou korekcí přes šest technik, Hodgesův–Lehmannův posun s 95% intervalem
+a test rovnocennosti s mezí 0,02. Hlavní otázkou je, zda se pořadí technik
+a propad CSS přechodů na baterii zachovají.
+
+Omezení: bloky v síti a na baterii neběží současně, takže mohou nést i vliv
+odlišné doby měření, například teploty místnosti. Uvádí se jako omezení
+srovnání.
